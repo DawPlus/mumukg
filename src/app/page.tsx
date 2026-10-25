@@ -1,0 +1,3 @@
+import Link from 'next/link';
+import { Shell } from '@/components/shell';
+export default function Home(){return <Shell title="동네밥" description="오늘 우리 동네에서 뭐 먹지?"><div className="rounded-3xl bg-orange-100 p-6"><p className="text-4xl">🍜</p><h2 className="mt-4 text-xl font-bold">오늘의 한 끼, 쉽게 정하자!</h2><p className="mt-2 text-sm text-slate-600">가보고 싶은 식당을 지도에 찍고, 저장한 후보에서 골라보자.</p><Link href="/map" className="mt-5 inline-block rounded-xl bg-orange-600 px-5 py-3 font-bold text-white">맛집 지도 열기</Link></div><div className="mt-5 grid grid-cols-2 gap-3"><Link className="rounded-2xl border p-5 font-semibold" href="/decide">🎰 메뉴 결정</Link><Link className="rounded-2xl border p-5 font-semibold" href="/restaurants">📋 맛집 목록</Link></div></Shell>}
