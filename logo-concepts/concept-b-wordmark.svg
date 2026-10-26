@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 490 160" width="100%" height="100%">
+  <title>머먹G 로고 - 콘셉트 B (골라보자 픽 G)</title>
+  <rect width="100%" height="100%" fill="none"/>
+
+  <!-- 머 (X: 35 ~ 130) -->
+  <g fill="#4d5b3c">
+    <path d="M 47,45 h 26 a 12,12 0 0 1 12,12 v 28 a 12,12 0 0 1 -12,12 h -26 a 12,12 0 0 1 -12,-12 v -28 a 12,12 0 0 1 12,-12 z
+             M 49,58 a 4,4 0 0 0 -4,4 v 18 a 4,4 0 0 0 4,4 h 22 a 4,4 0 0 0 4,-4 v -18 a 4,4 0 0 0 -4,-4 z" fill-rule="evenodd"/>
+    <rect x="80" y="66" width="22" height="13" rx="4"/>
+    <rect x="97" y="25" width="14" height="110" rx="7"/>
+  </g>
+
+  <!-- 먹 (X: 145 ~ 240) -->
+  <g fill="#4d5b3c">
+    <path d="M 157,25 h 22 a 10,10 0 0 1 10,10 v 20 a 10,10 0 0 1 -10,10 h -22 a 10,10 0 0 1 -10,-10 v -20 a 10,10 0 0 1 10,-10 z
+             M 159,37 a 3,3 0 0 0 -3,3 v 10 a 3,3 0 0 0 3,3 h 18 a 3,3 0 0 0 3,-3 v -10 a 3,3 0 0 0 -3,-3 z" fill-rule="evenodd"/>
+    <rect x="185" y="44" width="18" height="12" rx="3"/>
+    <rect x="199" y="25" width="13" height="60" rx="6.5"/>
+    <path d="M 152,98 h 50 a 8,8 0 0 1 8,8 v 24 a 6,6 0 0 1 -12,0 v -18 a 2,2 0 0 0 -2,-2 h -44 a 6,6 0 0 1 0,-12 z"/>
+  </g>
+
+  <!-- G with Decisive Selection Arrow (Pick!) -->
+  <!-- Center: (340, 80), R_out = 55, R_in = 40 -->
+  <g fill="#4d5b3c">
+    <!-- Circular track of G -->
+    <path d="
+      M 379,41
+      A 55,55 0 1 0 395,80
+      H 340
+      a 7.5,7.5 0 0 1 0,-15
+      h 40
+      A 40,40 0 1 1 368,52
+      a 7.5,7.5 0 0 1 11,-11 z
+    "/>
+    <!-- The Pick Selector: An arrow pointer inside pointing right into G's shelf -->
+    <path d="
+      M 330,80
+      L 312,68
+      a 5,5 0 0 0 -8,4
+      v 16
+      a 5,5 0 0 0 8,4
+      z
+    " fill="#4d5b3c"/>
+    <!-- Accent Dial Tick Marks representing roulette options -->
+    <circle cx="395" cy="55" r="4" fill="#d9d8b8"/>
+    <circle cx="392" cy="108" r="4" fill="#d9d8b8"/>
+  </g>
+</svg>

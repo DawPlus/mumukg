@@ -30,7 +30,7 @@ export default function RestaurantList() {
   function remove(item:Restaurant){if(window.confirm(`'${item.name}'을(를) 목록에서 삭제할까?`))persist(items.filter(x=>x.id!==item.id));}
   const visible=items.filter(item=>(filter==='전체'||(filter==='방문 완료'?item.visited:!item.visited))&&[item.name,item.category,item.note].some(v=>v.toLowerCase().includes(query.trim().toLowerCase())));
   function toggleVisited(item:Restaurant){persist(items.map(x=>x.id===item.id?{...x,visited:!x.visited}:x));}
-  return <Shell title="맛집 목록" description="지도에 등록한 식당을 모아서 확인해요.">
+  return <Shell>
     <div className="mb-5 flex gap-2">
       <button onClick={startAdd} className="min-h-12 flex-1 rounded-xl bg-orange-600 px-4 font-bold text-white">+ 맛집 직접 등록</button>
       <Link href="/map" className="flex min-h-12 items-center justify-center rounded-xl border border-orange-300 px-4 font-semibold text-orange-700">지도 등록</Link>

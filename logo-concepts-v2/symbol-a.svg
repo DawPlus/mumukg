@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="100%" height="100%">
+  <title>머먹 - 식판 주사위 심볼</title>
+  <rect width="256" height="256" rx="56" fill="#efe6d4"/>
+  <rect x="8" y="8" width="240" height="240" rx="48" fill="none" stroke="#d9d8b8" stroke-width="2"/>
+
+  <!-- Isometric Dice Body -->
+  <!-- Top Face (Warm Sage Tint) -->
+  <path d="M 128,42 L 194,80 L 128,118 L 62,80 Z" fill="#d9d8b8"/>
+  
+  <!-- Left Face (Deep Olive) -->
+  <path d="M 62,80 L 128,118 L 128,198 L 62,160 Z" fill="#4d5b3c"/>
+  
+  <!-- Right Face (Olive Accent - medium tone / shaded) -->
+  <path d="M 128,118 L 194,80 L 194,160 L 128,198 Z" fill="#4d5b3c" opacity="0.88"/>
+
+  <!-- Face Details (The "Food" Pips) -->
+  <!-- Top Face: Steaming Rice Bowl Pip -->
+  <g transform="translate(128, 80) scale(0.9)">
+    <!-- Bowl silhouette in Olive -->
+    <path d="M -22,-4 a 22,18 0 0 0 44,0 h -44 z" fill="#4d5b3c"/>
+    <!-- Steam swirls in Ivory -->
+    <path d="M -8,-10 q 4,-6 0,-12" stroke="#4d5b3c" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+    <path d="M 2,-10 q 4,-6 0,-12" stroke="#4d5b3c" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+    <path d="M 12,-10 q 4,-6 0,-12" stroke="#4d5b3c" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  </g>
+
+  <!-- Left Face: 2 Food Pips (Peas / Fried Eggs in Ivory) -->
+  <circle cx="85" cy="120" r="9" fill="#efe6d4"/>
+  <circle cx="85" cy="120" r="4.5" fill="#d9d8b8"/>
+  <circle cx="105" cy="158" r="9" fill="#efe6d4"/>
+  <circle cx="105" cy="158" r="4.5" fill="#d9d8b8"/>
+
+  <!-- Right Face: 3 Dice Pips as Dining Utensils / Dots -->
+  <circle cx="148" cy="140" r="7" fill="#efe6d4"/>
+  <circle cx="168" cy="120" r="7" fill="#efe6d4"/>
+  <circle cx="168" cy="160" r="7" fill="#efe6d4"/>
+</svg>

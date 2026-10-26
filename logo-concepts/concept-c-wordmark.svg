@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 490 160" width="100%" height="100%">
+  <title>머먹G 로고 - 콘셉트 C (테이블 플레이트 뱃지)</title>
+  <!-- Rounded Platter Tray Frame -->
+  <rect x="8" y="10" width="474" height="140" rx="36" fill="#efe6d4" stroke="#4d5b3c" stroke-width="6"/>
+
+  <!-- Subtle Rim Inset -->
+  <rect x="16" y="18" width="458" height="124" rx="28" fill="none" stroke="#d9d8b8" stroke-width="2" stroke-dasharray="8 6"/>
+
+  <!-- 머 (X: 52 ~ 140) -->
+  <g fill="#4d5b3c">
+    <path d="M 64,48 h 24 a 10,10 0 0 1 10,10 v 24 a 10,10 0 0 1 -10,10 h -24 a 10,10 0 0 1 -10,-10 v -24 a 10,10 0 0 1 10,-10 z
+             M 66,59 a 3,3 0 0 0 -3,3 v 14 a 3,3 0 0 0 3,3 h 20 a 3,3 0 0 0 3,-3 v -14 a 3,3 0 0 0 -3,-3 z" fill-rule="evenodd"/>
+    <rect x="94" y="67" width="18" height="11" rx="3.5"/>
+    <rect x="108" y="32" width="12" height="96" rx="6"/>
+  </g>
+
+  <!-- 먹 (X: 155 ~ 245) -->
+  <g fill="#4d5b3c">
+    <path d="M 166,32 h 20 a 8,8 0 0 1 8,8 v 18 a 8,8 0 0 1 -8,8 h -20 a 8,8 0 0 1 -8,-8 v -18 a 8,8 0 0 1 8,-8 z
+             M 168,42 a 2.5,2.5 0 0 0 -2.5,2.5 v 9 a 2.5,2.5 0 0 0 2.5,2.5 h 15 a 2.5,2.5 0 0 0 2.5,-2.5 v -9 a 2.5,2.5 0 0 0 -2.5,-2.5 z" fill-rule="evenodd"/>
+    <rect x="190" y="49" width="16" height="10" rx="3"/>
+    <rect x="202" y="32" width="11" height="52" rx="5.5"/>
+    <path d="M 162,95 h 44 a 7,7 0 0 1 7,7 v 21 a 5,5 0 0 1 -10,0 v -16 a 2,2 0 0 0 -2,-2 h -39 a 5,5 0 0 1 0,-10 z"/>
+  </g>
+
+  <!-- G (X: 270 ~ 380, Center: 325, 80) -->
+  <g fill="#4d5b3c">
+    <!-- Center (325, 80), R_out=48, R_in=35, sw=13 -->
+    <path d="
+      M 360,46
+      A 48,48 0 1 0 373,80
+      H 325
+      a 6.5,6.5 0 0 1 0,-13
+      h 35
+      A 35,35 0 1 1 350,55
+      a 6.5,6.5 0 0 1 10,-9 z
+    "/>
+  </g>
+
+  <!-- Subtitle Tag: "골라보자" Pill Badge on Right -->
+  <g transform="translate(390, 48)">
+    <rect width="64" height="64" rx="20" fill="#4d5b3c"/>
+    <!-- Fork & Spoon Icon in Badge -->
+    <path d="M 18,22 v 12 a 6,6 0 0 0 5,6 v 14 a 3,3 0 0 0 6,0 v -14 a 6,6 0 0 0 5,-6 v -12 a 2,2 0 0 0 -4,0 v 9 a 1,1 0 0 1 -2,0 v -9 a 2,2 0 0 0 -4,0 v 9 a 1,1 0 0 1 -2,0 v -9 a 2,2 0 0 0 -4,0 z" fill="#efe6d4"/>
+    <path d="M 45,20 a 6,9 0 0 0 -6,9 c 0,5 4,8 5,9 v 16 a 3,3 0 0 0 6,0 v -16 c 1,-1 5,-4 5,-9 a 6,9 0 0 0 -6,-9 z" fill="#d9d8b8"/>
+  </g>
+</svg>

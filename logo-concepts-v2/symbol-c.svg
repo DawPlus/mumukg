@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="100%" height="100%">
+  <title>머먹 - 얌얌 볼 심볼</title>
+  <rect width="256" height="256" rx="56" fill="#efe6d4"/>
+  <rect x="8" y="8" width="240" height="240" rx="48" fill="none" stroke="#d9d8b8" stroke-width="2"/>
+
+  <!-- Steam rising that forms a witty '!' (Exclamation of decision: '이거 먹자!') -->
+  <g transform="translate(128, 55)">
+    <!-- Left Steam -->
+    <path d="M -32,24 C -36,8 -24,-2 -28,-18" fill="none" stroke="#d9d8b8" stroke-width="5" stroke-linecap="round"/>
+    <!-- Center Exclamation Steam: Decision Eureka! -->
+    <path d="M 0,22 C -2,6 4,-2 0,-16" fill="none" stroke="#4d5b3c" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="0" cy="-28" r="4.5" fill="#4d5b3c"/>
+    <!-- Right Steam -->
+    <path d="M 32,24 C 28,8 40,-2 36,-18" fill="none" stroke="#d9d8b8" stroke-width="5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Chunky Delicious Bowl in Olive -->
+  <!-- Center (128, 150) -->
+  <g fill="#4d5b3c">
+    <!-- Bowl Body: Top Rim 156px wide, Height 68px -->
+    <path d="M 46,120 H 210 C 206,172 168,190 128,190 C 88,190 50,172 46,120 Z"/>
+    <!-- Foot stand -->
+    <rect x="98" y="190" width="60" height="10" rx="5"/>
+    <!-- Rim Highlight line -->
+    <path d="M 42,118 H 214 a 6,6 0 0 1 0,12 H 42 a 6,6 0 0 1 0,-12 Z" fill="#4d5b3c"/>
+  </g>
+
+  <!-- Witty Smile Face on Bowl (Ivory) -->
+  <!-- Left Eye: Winking Smile Arc (^_~) -->
+  <path d="M 85,152 Q 95,142 105,152" fill="none" stroke="#efe6d4" stroke-width="4.5" stroke-linecap="round"/>
+  <!-- Right Eye: Decisive Wink / Star / Joy dot -->
+  <circle cx="152" cy="150" r="5" fill="#efe6d4"/>
+  <!-- Cheerful Smile Mouth -->
+  <path d="M 112,165 Q 128,178 144,165" fill="none" stroke="#efe6d4" stroke-width="4.5" stroke-linecap="round"/>
+  
+  <!-- Cute Blush Cheeks in Sage -->
+  <circle cx="76" cy="158" r="6" fill="#d9d8b8"/>
+  <circle cx="174" cy="158" r="6" fill="#d9d8b8"/>
+</svg>

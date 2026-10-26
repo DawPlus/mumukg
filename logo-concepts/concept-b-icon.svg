@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="100%" height="100%">
+  <title>머먹G 아이콘 - 콘셉트 B</title>
+  <rect width="256" height="256" rx="56" fill="#4d5b3c"/>
+  
+  <!-- G in Ivory with Pointer -->
+  <!-- Center (128, 128), R_out=82, R_in=58 -->
+  <g fill="#efe6d4">
+    <path d="
+      M 186,70
+      A 82,82 0 1 0 210,128
+      H 128
+      a 12,12 0 0 1 0,-24
+      h 60
+      A 58,58 0 1 1 170,87
+      a 11,11 0 0 1 16,-17 z
+    "/>
+    <!-- Pointer -->
+    <path d="
+      M 112,128
+      L 86,110
+      a 8,8 0 0 0 -13,6
+      v 24
+      a 8,8 0 0 0 13,6
+      z
+    "/>
+    <!-- Dial Accent Dots -->
+    <circle cx="210" cy="90" r="6" fill="#d9d8b8"/>
+    <circle cx="206" cy="170" r="6" fill="#d9d8b8"/>
+  </g>
+</svg>

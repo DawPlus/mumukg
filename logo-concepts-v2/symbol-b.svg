@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="100%" height="100%">
+  <title>머먹 - 메뉴 나침반 심볼</title>
+  <rect width="256" height="256" rx="56" fill="#4d5b3c"/>
+  
+  <!-- Outer Compass Dial (Rim in Sage) -->
+  <circle cx="128" cy="128" r="92" fill="none" stroke="#d9d8b8" stroke-width="4"/>
+  
+  <!-- Dial Notches (N, E, S, W & Intercardinal Dots) -->
+  <circle cx="128" cy="46" r="4.5" fill="#efe6d4"/>
+  <circle cx="210" cy="128" r="4.5" fill="#efe6d4"/>
+  <circle cx="128" cy="210" r="4.5" fill="#efe6d4"/>
+  <circle cx="46" cy="128" r="4.5" fill="#efe6d4"/>
+  
+  <circle cx="186" cy="70" r="3" fill="#d9d8b8"/>
+  <circle cx="186" cy="186" r="3" fill="#d9d8b8"/>
+  <circle cx="70" cy="186" r="3" fill="#d9d8b8"/>
+  <circle cx="70" cy="70" r="3" fill="#d9d8b8"/>
+
+  <!-- Central Compass Needle: Dynamic Angle (~35 degrees, pointing North-East to victory/pick) -->
+  <g transform="translate(128, 128) rotate(-40)">
+    <!-- Pointer Needle Tip: Sleek Spoon Arrow in Ivory -->
+    <path d="M 0,-76 C 14,-60 16,-35 12,0 L -12,0 C -16,-35 -14,-60 0,-76 Z" fill="#efe6d4"/>
+    
+    <!-- Tail: Sleek Fork in Sage -->
+    <path d="M 6,0 L 8,50 C 8,62 5,68 0,72 C -5,68 -8,62 -8,50 L -6,0 Z" fill="#d9d8b8"/>
+    <!-- Fork Slit cutouts -->
+    <line x1="-3" y1="52" x2="-3" y2="68" stroke="#4d5b3c" stroke-width="1.8"/>
+    <line x1="3" y1="52" x2="3" y2="68" stroke="#4d5b3c" stroke-width="1.8"/>
+
+    <!-- Center Pivot Pin -->
+    <circle cx="0" cy="0" r="16" fill="#efe6d4"/>
+    <circle cx="0" cy="0" r="8" fill="#4d5b3c"/>
+    <circle cx="0" cy="0" r="3" fill="#d9d8b8"/>
+  </g>
+</svg>

@@ -1,0 +1,142 @@
+import { suggestIconCode } from './food-icons';
+import type { FoodRank, FoodStory } from './types';
+
+const STORAGE_KEY = 'mumukg.story.v1';
+
+function normalizeStory(item: unknown): FoodStory | null {
+  if (!item || typeof item !== 'object') return null;
+  const row = item as Partial<FoodStory> & { mealType?: unknown };
+  if (
+    typeof row.id !== 'string' ||
+    typeof row.name !== 'string' ||
+    typeof row.eatenAt !== 'string' ||
+    typeof row.place !== 'string' ||
+    typeof row.note !== 'string' ||
+    typeof row.createdAt !== 'string'
+  ) {
+    return null;
+  }
+  if (
+    !(
+      row.rating === null ||
+      row.rating === undefined ||
+      (typeof row.rating === 'number' && row.rating >= 1 && row.rating <= 5)
+    )
+  ) {
+    return null;
+  }
+  if (
+    !(
+      row.amount === null ||
+      row.amount === undefined ||
+      (typeof row.amount === 'number' && Number.isFinite(row.amount) && row.amount >= 0)
+    )
+  ) {
+    return null;
+  }
+  const icon =
+    typeof row.icon === 'string' && row.icon.trim()
+      ? row.icon.trim()
+      : suggestIconCode(row.name);
+  return {
+    id: row.id,
+    name: row.name,
+    eatenAt: row.eatenAt,
+    place: row.place,
+    note: row.note,
+    rating: row.rating ?? null,
+    amount: row.amount == null ? null : Math.round(row.amount),
+    icon,
+    createdAt: row.createdAt,
+  };
+}
+
+export function loadStories(): FoodStory[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const data: unknown = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(data)) return [];
+    return data
+      .map(normalizeStory)
+      .filter((item): item is FoodStory => item !== null)
+      .sort((a, b) => {
+        if (a.eatenAt === b.eatenAt) return b.createdAt.localeCompare(a.createdAt);
+        return b.eatenAt.localeCompare(a.eatenAt);
+      });
+  } catch {
+    return [];
+  }
+}
+
+export function saveStories(items: FoodStory[]) {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  }
+}
+
+function daysAgoIso(days: number) {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - days);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+export function rankRecentFoods(items: FoodStory[], days = 30): FoodRank[] {
+  const since = daysAgoIso(days - 1);
+  type Acc = FoodRank & { iconVotes: Map<string, number> };
+  const map = new Map<string, Acc>();
+  for (const item of items) {
+    if (item.eatenAt < since) continue;
+    const key = item.name.trim();
+    if (!key) continue;
+    const current =
+      map.get(key) ??
+      ({
+        name: key,
+        count: 0,
+        totalAmount: 0,
+        icon: item.icon || suggestIconCode(key),
+        iconVotes: new Map<string, number>(),
+      } satisfies Acc);
+    current.count += 1;
+    if (item.amount != null) current.totalAmount += item.amount;
+    const icon = item.icon || suggestIconCode(key);
+    current.iconVotes.set(icon, (current.iconVotes.get(icon) ?? 0) + 1);
+    map.set(key, current);
+  }
+  return [...map.values()]
+    .map(({ iconVotes, ...rank }) => {
+      let bestIcon = rank.icon;
+      let bestVotes = -1;
+      for (const [code, votes] of iconVotes) {
+        if (votes > bestVotes) {
+          bestVotes = votes;
+          bestIcon = code;
+        }
+      }
+      return { ...rank, icon: bestIcon };
+    })
+    .sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count;
+      if (b.totalAmount !== a.totalAmount) return b.totalAmount - a.totalAmount;
+      return a.name.localeCompare(b.name, 'ko');
+    });
+}
+
+export function formatWon(value: number) {
+  return `${value.toLocaleString('ko-KR')}원`;
+}
+
+export {
+  foodEmoji,
+  foodIconGroups,
+  foodIconOptions,
+  foodIconPath,
+  foodIconSrc,
+  resolveFoodIconSrc,
+  suggestIconCode,
+} from './food-icons';

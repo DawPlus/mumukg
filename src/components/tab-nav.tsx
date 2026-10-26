@@ -1,6 +1,42 @@
 'use client';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { MapPinned, UtensilsCrossed, Shuffle, List, Bike } from 'lucide-react';
-const tabs = [{href:'/map',name:'지도',Icon:MapPinned},{href:'/',name:'동네밥',Icon:UtensilsCrossed},{href:'/decide',name:'랜덤메뉴',Icon:Shuffle},{href:'/delivery',name:'배달음식',Icon:Bike},{href:'/restaurants',name:'맛집 목록',Icon:List}];
-export function TabNav() { const path = usePathname(); return <nav aria-label="메인 메뉴" className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur"><div className="mx-auto grid max-w-xl grid-cols-5">{tabs.map(({href,name,Icon}) => <Link key={href} href={href} aria-current={path===href?'page':undefined} className={`flex min-h-16 flex-col items-center justify-center gap-1 px-0.5 text-[10px] sm:text-xs ${path===href?'font-bold text-orange-600':'text-slate-500'}`}><Icon size={21}/>{name}</Link>)}</div></nav>; }
+import { usePathname, useRouter } from 'next/navigation';
+import type { CSSProperties } from 'react';
+import GooeyNav from './gooey-nav';
+import { MapPinned, UtensilsCrossed, Shuffle, Bike, BookOpen } from 'lucide-react';
+
+const tabs = [
+  { href: '/map', name: '지도', Icon: MapPinned },
+  { href: '/', name: '근처밥집', Icon: UtensilsCrossed },
+  { href: '/decide', name: '랜덤메뉴', Icon: Shuffle },
+  { href: '/delivery', name: '배달음식', Icon: Bike },
+  { href: '/story', name: '먹스토리', Icon: BookOpen },
+];
+
+export function TabNav() {
+  const path = usePathname();
+  const router = useRouter();
+  const activeIndex = Math.max(0, tabs.findIndex(({ href }) => href === path));
+
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-[#d9d8b8] bg-[#efe6d4] pb-[env(safe-area-inset-bottom)]">
+      <GooeyNav
+        items={tabs.map(({ name, Icon }) => ({ label: name, icon: <Icon aria-hidden="true"/> }))}
+        activeIndex={activeIndex}
+        onChange={(index) => router.push(tabs[index].href)}
+        theme="light"
+        color="#4d5b3c"
+        activeTextColor="#f7f5ef"
+        size="lg"
+        frame={false}
+        particleCount={9}
+        spread={16}
+        wobble={0.65}
+        gooeyness={0.25}
+        timeVariance={550}
+        hoverEffect={false}
+        className="!flex !w-full !max-w-none !justify-center !rounded-none !p-0"
+        style={{ '--gn-pad': '2px', '--gn-gap': '0px', '--gn-font': '10px', '--gn-x': '2px', '--gn-y': '12px' } as CSSProperties}
+      />
+    </div>
+  );
+}

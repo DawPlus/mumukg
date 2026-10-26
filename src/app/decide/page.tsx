@@ -17,7 +17,7 @@ export default function Decide(){
  function vote(selected:string){const next=[...winners,selected];if(index+2>=round.length){if(next.length===1){setChoice(next[0]);setIndex(round.length);}else{setRound(next);setIndex(0);setWinners([]);}}else{setWinners(next);setIndex(index+2);}}
  function add(e:React.FormEvent){e.preventDefault();const v=draft.trim();if(v&&!candidates.includes(v)){setCandidates([...candidates,v]);setDraft('');setMode('random');setChoice('');}}
  const modes:[Mode,string][]=[['random','🎲 랜덤'],['tournament','🏆 월드컵'],['swipe','💘 골라내기']];
- return <Shell title="랜덤메뉴" description="고민될 땐 재미있게 골라보자!">
+ return <Shell>
  <div className="grid grid-cols-3 gap-2">{modes.map(([id,label])=><button key={id} aria-pressed={mode===id} onClick={()=>reset(id)} className={`min-h-12 rounded-xl border px-1 text-sm ${mode===id?'border-orange-600 bg-orange-50 font-bold':'border-slate-200'}`}>{label}</button>)}</div>
  <section className="mt-5 rounded-3xl bg-orange-50 p-5 text-center">
  {mode==='random'&&<><p className="text-sm text-slate-500">랜덤 메뉴 추천</p><h2 aria-live="polite" className="my-8 text-2xl font-extrabold">{choice||'오늘 뭘 먹을까?'}</h2><button onClick={()=>{const pool=candidates.filter(x=>x!==choice);const list=pool.length?pool:candidates;setChoice(list[Math.floor(Math.random()*list.length)]);}} className="min-h-12 w-full rounded-xl bg-orange-600 font-bold text-white">🎲 추천받기</button></>}
