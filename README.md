@@ -4,10 +4,10 @@
 
 ## 현재 기술 스택
 - Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4
-- pnpm 12.15.0, lucide-react
+- pnpm 10.33.0 (`packageManager` 기준), lucide-react
 - zustand / zod 패키지 설치됨 (실제 도입은 필요한 시점에)
 - 현재 별도 백엔드, 로그인, Supabase 연동 없음. 데이터는 브라우저 localStorage.
-- 지도는 카카오맵 JavaScript SDK 연결 코드만 있음. API 키 미설정 및 실기기 검증 전.
+- 지도는 카카오맵 JavaScript SDK 및 주변 음식점 검색 코드가 있음. `.env.local`의 `NEXT_PUBLIC_KAKAO_MAP_KEY`를 사용하며 브라우저/실기기 동작은 별도 검증 필요. 키 값은 문서나 Git에 기록하지 않음.
 
 ## 실행 및 검사
 ```bash
@@ -24,11 +24,12 @@ pnpm build
 ## 하단 탭 및 구현 현황
 | 경로 | 탭 | 구현 현황 |
 | --- | --- | --- |
-| /map | 지도 | SDK 키 입력 시 지도/마커 렌더링 코드, 위치 클릭 또는 좌표 입력 및 식당 저장 (지도 실동작 미검증) |
-| / | 동네밥 | 메인 랜딩/지도·메뉴 이동 링크. 주변 식당 탐색 미구현 |
-| /decide | 랜덤메뉴 | 랜덤 추첨, 기본 토너먼트, 좋아하는 메뉴 추리기, 후보 추가/제외 |
+| /map | 지도 | 카카오맵, 길게 누르기 → 주변 업소 선택/직접 등록, 저장 마커·목록 (실기기 검증 필요) |
+| / | 근처밥집 | 메인 랜딩. 실시간 주변 탐색/추천은 추가 개발 필요 |
+| /decide | 랜덤메뉴 | 랜덤 추첨, 토너먼트, 후보 관리. '집에서 / 나가서' 분기는 기획 논의만 완료 |
 | /delivery | 배달음식 | 분류 필터, 랜덤 메뉴, 즐겨찾기, 메뉴 직접 추가/삭제, 최근 선택 기록 |
-| /restaurants | 맛집 목록 | 직접 등록·수정·삭제, 검색, 방문/미방문 표시 및 필터 |
+| /story | 먹스토리 | 음식 기록 생성·수정·삭제, 검색, 랭킹/아이콘 구름. 반응형 카드 디자인 개선 |
+| /restaurants | 별도 경로 | 맛집 목록 CRUD, 검색, 방문 여부 필터 (현재 하단 탭 아님) |
 | /saved | 구 경로 | /restaurants로 리다이렉트 |
 
 ## 저장 데이터
@@ -41,7 +42,9 @@ pnpm build
 ## 폴더
 - `src/app`: 5개 탭의 페이지 및 레이아웃
 - `src/components/tab-nav.tsx`: 하단 5개 탭
-- `src/components/shell.tsx`: 공통 헤더, 모바일 컨테이너, Safe Area
+- `src/components/shell.tsx`: 공통 콘텐츠 컨테이너. 먹스토리(editorial)는 전체 너비 반응형, 일반 화면은 기존 모바일 너비 유지
+- `src/components/gooey-nav.tsx`: 하단 탭의 Gooey 애니메이션
+- `docs/development.md`: Acorn 프로젝트 전용 UI/UX·색상 제약 조건
 - `src/lib/restaurants.ts`: localStorage 읽기/쓰기
 - `scripts/build.mjs`: 프로덕션 NODE_ENV 보정
 
@@ -61,7 +64,7 @@ pnpm build
 - 룰렛 애니메이션 모드는 아직 미구현.
 - 배달 메뉴 등록/삭제와 추천 기록은 현재 브라우저 기준.
 - `pnpm install`에서 승인되지 않은 의존성 설치 스크립트 경고 이력 확인.
-- Git 초기화 및 원격 저장소 연결은 현재 확인되지 않음.
+- Git 브랜치 `main` 및 `origin/main` 추적 확인 (2026-10-27). 미커밋 변경사항 확인 후 선택적으로 스테이징할 것.
 
 ## 다음 작업 우선순위
 1. **모바일 실제 조작 검증**: 320~390px 폭, 하단 탭, 입력폼, 검색, 추천, 페이지 이동.
@@ -70,6 +73,15 @@ pnpm build
 4. **동네밥 기능**: 등록된/주변 식당에서 추천, 필터, 최근 방문 중복 회피.
 5. **데이터 백업 또는 Supabase 동기화**: 개인용 계정 또는 파일 내보내기/가져오기.
 6. **PWA/WebView 검증**: iOS Safe Area, 뒤로가기, 외부 링크, 오프라인/실행 복원.
+
+## 2026-10-27 작업 메모
+- Acorn 하네스 `AGENTS.md` 적용. UI 제약: 가로 스크롤 금지, 모바일 우선+넓은 화면 전체 활용, 브랜드 Olive `#4D5B3C` / Sage `#D9D8B8` / Cream `#EFE6D4`; 보조 상태 색 Muted Brick `#B4534B` / Amber `#A47536` / Green `#527A60` 확정.
+- 지도 등록 모달 주변 업소 목록: 세로 터치 스크롤 설정 및 모달 중복 스크롤 억제. 모바일에서 동작 확인 필요.
+- 지도 `addRestaurantMarker` 참조 순서로 발생했던 ESLint 오류 수정.
+- `<html>`의 확장 프로그램(`data-hwp-extension`) 유발 hydration 경고에 `suppressHydrationWarning` 적용. 확장 프로그램 비활성화 시 원인 재검증 가능.
+- 먹스토리: 검색창, 기록 카드, 날짜 헤더, 랭킹 구름, 기록 버튼/입력 Drawer 스타일 정리 및 카드 1/2/3열 반응형 적용. 등록·수정·삭제/저장 로직은 변경하지 않음.
+- 최근 검사: 먹스토리 수정 파일 ESLint 통과, `pnpm typecheck` 통과, `pnpm build` 통과. 전체 린트/실기기 E2E는 별도 미검증.
+- 3~4명 친구와 맛집 공유 및 '집에서/나가서' 메뉴 결정은 향후 기획 방향이며 아직 인증·공유 DB·추천 연결은 구현하지 않음.
 
 ## 다음 대화에서
 '@musi 연결해서 mumukg README와 작업 기록 확인하고 모바일 기능 이어서 개발하자'라고 요청하면 됨.

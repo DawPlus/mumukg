@@ -1,0 +1,15 @@
+{
+	"version": 2,
+	"activeTicket": null,
+	"classification": null,
+	"phase": null,
+	"next": null,
+	"verification": "pending",
+	"gates": {
+		"codeReview": "pending",
+		"securityReview": "n/a",
+		"e2e": "n/a",
+		"docs": "pending"
+	},
+	"updatedAt": null
+}

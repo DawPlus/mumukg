@@ -211,7 +211,7 @@ export default function StoryPage() {
           type="button"
           onClick={startAdd}
           aria-label="먹은 음식 기록"
-          className="fixed right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#4d5b3c] text-[#efe6d4] shadow-[0_8px_24px_rgba(77,91,60,0.35)] bottom-[calc(5.5rem+env(safe-area-inset-bottom))]"
+          className="fixed right-5 z-40 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#d9d8b8] bg-[#4d5b3c] text-[#efe6d4] shadow-[0_8px_24px_rgba(77,91,60,0.35)] bottom-[calc(5.5rem+env(safe-area-inset-bottom))]"
         >
           <Plus className="h-7 w-7" strokeWidth={2.25} aria-hidden />
         </button>
@@ -224,7 +224,7 @@ export default function StoryPage() {
           if (!next) setError('');
         }}
       >
-        <DrawerContent className="story-drawer max-h-[92dvh]">
+        <DrawerContent className="story-drawer max-h-[92dvh] rounded-t-[28px] border-[#d9d8b8]">
           <DrawerHeader className="text-left">
             <div className="flex items-center justify-between gap-3">
               <DrawerTitle>{editing ? '기록 수정' : '새 기록'}</DrawerTitle>
@@ -344,28 +344,28 @@ export default function StoryPage() {
         </DrawerContent>
       </Drawer>
 
-      <div className="mb-5">
+      <div className="mb-6 max-w-xl">
         <input
           aria-label="먹스토리 검색"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="음식, 장소, 메모 검색"
-          className="min-h-11 w-full rounded-[var(--radius-control)] border border-[var(--border)] bg-[var(--raised)] px-4 text-[15px] outline-none"
+          className="min-h-12 w-full rounded-2xl border border-[var(--border)] bg-[#fffaf0] px-4 text-[15px] text-[var(--text)] shadow-sm outline-none focus:border-[var(--ink)]"
         />
       </div>
 
       {grouped.length ? (
-        <div className="space-y-8">
+        <div className="space-y-9">
           {grouped.map(([date, rows]) => (
             <section key={date}>
-              <h2 className="mb-3 text-[13px] font-medium text-[var(--muted)]">
+              <h2 className="mb-3 border-b border-[var(--border)] pb-2 text-[13px] font-semibold tracking-wide text-[var(--muted)]">
                 {formatDate(date)}
               </h2>
-              <div className="space-y-2">
+              <div className="grid grid-cols-1 items-start gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {rows.map((item) => (
                   <article
                     key={item.id}
-                    className="rounded-[var(--radius-card)] bg-[var(--surface)] px-4 py-4"
+                    className="rounded-[var(--radius-card)] border border-[#d4d4b7] bg-[#f7f1e3] p-4 shadow-[0_3px_12px_rgba(77,91,60,0.05)] sm:p-5"
                   >
                     <div className="flex items-start gap-3">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -374,10 +374,10 @@ export default function StoryPage() {
                         alt=""
                         width={36}
                         height={36}
-                        className="mt-0.5 h-9 w-9 shrink-0"
+                        className="mt-0.5 h-11 w-11 shrink-0 rounded-xl bg-[#efe6d4] p-1"
                       />
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-[16px] font-medium leading-snug">
+                        <h3 className="text-[17px] font-semibold leading-snug tracking-tight text-[var(--ink)]">
                           {item.name}
                         </h3>
                         <p className="mt-1 text-[13px] text-[var(--muted)]">
@@ -406,7 +406,7 @@ export default function StoryPage() {
                         ) : null}
                       </div>
                     </div>
-                    <div className="mt-3 flex gap-2">
+                    <div className="mt-4 flex gap-2 border-t border-[var(--border)] pt-3">
                       <button
                         type="button"
                         className="h-10 flex-1 rounded-[var(--radius-control)] bg-[var(--raised)] text-[13px] font-medium text-[var(--text)] ring-1 ring-[var(--border)]"
@@ -429,7 +429,7 @@ export default function StoryPage() {
           ))}
         </div>
       ) : (
-        <div className="rounded-[var(--radius-card)] bg-[var(--surface)] px-5 py-8 text-center">
+        <div className="rounded-[var(--radius-card)] border border-[var(--border)] bg-[#f7f1e3] px-5 py-10 text-center">
           <p className="text-[14px] text-[var(--muted)]">
             {items.length
               ? '검색 조건에 맞는 기록이 없어.'

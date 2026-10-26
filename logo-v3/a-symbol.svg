@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title-a">
+  <title id="title-a">mumukg Concept A - Surprise Cloche</title>
+  <g id="symbol" fill="#000000">
+    <!-- Top handle knob -->
+    <circle cx="128" cy="44" r="16"/>
+    <rect x="120" y="54" width="16" height="14" rx="4"/>
+
+    <!-- Cloche Dome with Negative-Space Face -->
+    <path fill-rule="evenodd" d="
+      M 36,170
+      C 36,96 76,64 128,64
+      C 180,64 220,96 220,170
+      Z
+      
+      M 82,122
+      C 82,112 98,112 98,122
+      C 98,132 82,132 82,122
+      Z
+
+      M 160,114
+      A 11,11 0 1,1 159.9,114
+      Z
+
+      M 102,144
+      Q 128,166 154,144
+      Q 128,156 102,144
+      Z
+    "/>
+
+    <!-- Serving Platter Base -->
+    <rect x="24" y="178" width="208" height="20" rx="10"/>
+  </g>
+</svg>

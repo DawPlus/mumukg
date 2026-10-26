@@ -105,6 +105,19 @@ export default function MapPage() {
   const activePointer = useRef<{ id: number; x: number; y: number } | null>(null);
   const placeSearchId = useRef(0);
 
+  function addRestaurantMarker(maps: NonNullable<Window['kakao']>['maps'], map: KakaoMap, item: Restaurant): KakaoMarker {
+    const image = new maps.MarkerImage(getFoodIcon(item.category), new maps.Size(30, 30), {
+      offset: new maps.Point(15, 15),
+      alt: `${item.category} 음식 아이콘`,
+    });
+    const marker = new maps.Marker({ map, position: new maps.LatLng(item.latitude, item.longitude), title: item.name, image });
+    maps.event.addListener(marker, 'click', () => {
+      setSelectedRestaurant(item);
+      setDialogOpen(true);
+    });
+    return marker;
+  }
+
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       setItems(loadRestaurants());
@@ -277,19 +290,6 @@ export default function MapPage() {
     }, 900);
   }
 
-  function addRestaurantMarker(maps: NonNullable<Window['kakao']>['maps'], map: KakaoMap, item: Restaurant): KakaoMarker {
-    const image = new maps.MarkerImage(getFoodIcon(item.category), new maps.Size(30, 30), {
-      offset: new maps.Point(15, 15),
-      alt: `${item.category} 음식 아이콘`,
-    });
-    const marker = new maps.Marker({ map, position: new maps.LatLng(item.latitude, item.longitude), title: item.name, image });
-    maps.event.addListener(marker, 'click', () => {
-      setSelectedRestaurant(item);
-      setDialogOpen(true);
-    });
-    return marker;
-  }
-
   function startLongPress(event: PointerEvent<HTMLDivElement>) {
     if (!event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) return;
     if ((event.target as HTMLElement).closest('button, a, [role="button"]')) return;
@@ -416,7 +416,7 @@ export default function MapPage() {
       onCancel={(event) => { event.preventDefault(); closeRegistration(); }}
       onClick={(event) => { if (event.target === event.currentTarget) closeRegistration(); }}
     >
-      <Card className={`map-dialog-panel map-scrollbar-hidden relative mx-auto w-[calc(100%-2rem)] max-w-lg ${!selectedRestaurant && registrationStep === 'search' ? 'flex h-[min(82dvh,680px)] flex-col overflow-hidden' : 'max-h-[85dvh] overflow-y-auto'}`}>
+      <Card className={`map-dialog-panel map-scrollbar-hidden relative mx-auto w-[calc(100%-2rem)] max-w-lg ${!selectedRestaurant && registrationStep === 'search' ? 'flex h-[min(82dvh,680px)] min-h-0 flex-col overflow-hidden' : 'max-h-[85dvh] overflow-y-auto'}`}>
         <CardHeader className="flex-row shrink-0 items-center justify-between gap-3 rounded-t-xl border-b border-[#e6e1d1] bg-[#f7f5ef]/75 px-4 py-2.5">
           <div className="space-y-1">
             <CardTitle id="restaurant-dialog-title" className="text-lg font-bold leading-tight text-[#3f4b32]">{selectedRestaurant?.name ?? (registrationStep === 'search' ? '이 가게가 맞나요?' : '맛집 등록')}</CardTitle>
@@ -444,7 +444,7 @@ export default function MapPage() {
                   {category}<span>{category === '전체' ? placeCandidates.length : candidateCounts[category]}</span>
                 </button>)}
               </div>
-              <div className="map-scrollbar-hidden min-h-0 flex-1 space-y-2 overflow-y-auto">
+              <div className="map-place-list map-scrollbar-hidden min-h-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto">
                 {visiblePlaceCandidates.map((place) => <Button key={place.id} type="button" variant="outline" className="h-auto w-full justify-start whitespace-normal !p-2.5 text-left" onClick={() => selectPlace(place)}>
                   <Image className="shrink-0" src={getFoodIcon(getFoodCategory(place.category_name, place.category_group_code))} width={28} height={28} alt="" aria-hidden="true"/>
                   <span className="min-w-0">

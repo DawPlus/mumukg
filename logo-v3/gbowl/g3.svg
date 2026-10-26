@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title-g3">
+  <title id="title-g3">mumukg G-Bowl Concept 3 (Pure Minimal G-Bowl)</title>
+  
+  <!-- Outer G-Bowl Path in Olive: Thickness 28px -->
+  <path fill-rule="evenodd" fill="#4D5B3C" d="
+    M 184,66
+    A 84,84 0 1,0 212,130
+    L 212,142
+    A 84,84 0 0,1 128,212
+    C 81.6,212 44,174.4 44,128
+    C 44,81.6 81.6,44 128,44
+    C 148,44 168,51 184,66
+    Z
+  "/>
+
+  <!-- Dipping Spoon in Sage entering at waist (forming G's crossbar) -->
+  <g transform="translate(112, 116)">
+    <!-- Spoon stem -->
+    <rect x="24" y="4" width="76" height="16" rx="8" fill="#D9D8B8"/>
+    <!-- Spoon bowl / scoop head -->
+    <ellipse cx="20" cy="12" rx="20" ry="15" fill="#D9D8B8"/>
+    <ellipse cx="20" cy="12" rx="12" ry="8" fill="#EFE6D4"/>
+  </g>
+
+  <!-- Single joyful character eye -->
+  <circle cx="106" cy="100" r="9" fill="#4D5B3C"/>
+
+  <!-- Bowl foot stand -->
+  <rect x="98" y="212" width="60" height="10" rx="5" fill="#4D5B3C"/>
+</svg>

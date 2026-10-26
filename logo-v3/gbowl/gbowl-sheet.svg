@@ -1,0 +1,660 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1600" height="984" viewBox="0 0 1600 984"><rect width="1600" height="984" fill="#f7f7f4"/><text x="60" y="78" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="40" font-weight="700" fill="#161616">머먹G — G-Bowl &amp; Spoon 발전안</text><text x="60" y="116" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="20" fill="#6b6b6b">Olive #4D5B3C · Sage #D9D8B8 · Cream #EFE6D4</text><rect x="60" y="150" width="474.667" height="774" rx="18" fill="#fff" stroke="#161616" stroke-width="2"/><g><svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 256 256" x="90" y="190" width="414.667" height="300" preserveAspectRatio="xMidYMid meet">
+  <title>mumukg G-Bowl 1: G-Spoon Bowl</title>
+  <g id="c0-symbol">
+    <!-- Main G-Bowl Frame in Olive (#4D5B3C) -->
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+      M 189,67
+      A 86,86 0 1,0 214,132
+      L 186,132
+      A 58,58 0 1,1 169,87
+      A 14,14 0 0,0 189,67
+      Z
+    "/>
+
+    <!-- Inward Spoon in Sage (#D9D8B8) forming G's crossbar -->
+    <g id="c0-spoon-crossbar">
+      <rect x="146" y="123" width="68" height="18" rx="9" fill="#D9D8B8"/>
+      <ellipse cx="138" cy="132" rx="24" ry="18" fill="#D9D8B8"/>
+      <ellipse cx="138" cy="132" rx="14" ry="10" fill="#EFE6D4"/>
+    </g>
+
+    <!-- Single Charming Eye Dot (Olive) -->
+    <circle cx="102" cy="116" r="9" fill="#4D5B3C"/>
+
+    <!-- Bowl Foot Stand (Olive) -->
+    <rect x="98" y="214" width="60" height="10" rx="5" fill="#4D5B3C"/>
+  </g>
+</svg></g><g><svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 610 256" x="90" y="514" width="414.667" height="120" preserveAspectRatio="xMidYMid meet">
+  <title>G-Bowl 1 Lockup</title>
+  <g transform="translate(38, 43) scale(0.6640625)">
+    <g id="l0-symbol">
+    <!-- Main G-Bowl Frame in Olive (#4D5B3C) -->
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+      M 189,67
+      A 86,86 0 1,0 214,132
+      L 186,132
+      A 58,58 0 1,1 169,87
+      A 14,14 0 0,0 189,67
+      Z
+    "/>
+
+    <!-- Inward Spoon in Sage (#D9D8B8) forming G's crossbar -->
+    <g id="l0-spoon-crossbar">
+      <rect x="146" y="123" width="68" height="18" rx="9" fill="#D9D8B8"/>
+      <ellipse cx="138" cy="132" rx="24" ry="18" fill="#D9D8B8"/>
+      <ellipse cx="138" cy="132" rx="14" ry="10" fill="#EFE6D4"/>
+    </g>
+
+    <!-- Single Charming Eye Dot (Olive) -->
+    <circle cx="102" cy="116" r="9" fill="#4D5B3C"/>
+
+    <!-- Bowl Foot Stand (Olive) -->
+    <rect x="98" y="214" width="60" height="10" rx="5" fill="#4D5B3C"/>
+  </g>
+  </g>
+  
+    <g id="l0-wordmark">
+      <path d="M 246,86 h 36 a 10,10 0 0 1 10,10 v 38 a 10,10 0 0 1 -10,10 h -36 a 10,10 0 0 1 -10,-10 v -38 a 10,10 0 0 1 10,-10 z M 250,100 a 3,3 0 0 0 -3,3 v 22 a 3,3 0 0 0 3,3 h 26 a 3,3 0 0 0 3,-3 v -22 a 3,3 0 0 0 -3,-3 z" fill-rule="evenodd" fill="#4D5B3C"/>
+      <rect x="286" y="110" width="24" height="15" rx="5" fill="#4D5B3C"/>
+      <rect x="306" y="70" width="16" height="116" rx="8" fill="#4D5B3C"/>
+      <path d="M 356,70 h 34 a 9,9 0 0 1 9,9 v 30 a 9,9 0 0 1 -9,9 h -34 a 9,9 0 0 1 -9,-9 v -30 a 9,9 0 0 1 9,-9 z M 359,83 a 3,3 0 0 0 -3,3 v 14 a 3,3 0 0 0 3,3 h 20 a 3,3 0 0 0 3,-3 v -14 a 3,3 0 0 0 -3,-3 z" fill-rule="evenodd" fill="#4D5B3C"/>
+      <rect x="394" y="89" width="20" height="14" rx="4.5" fill="#4D5B3C"/>
+      <rect x="410" y="70" width="15" height="66" rx="7.5" fill="#4D5B3C"/>
+      <path d="M 354,142 h 50 a 8,8 0 0 1 8,8 v 26 a 6,6 0 0 1 -12,0 v -19 a 2,2 0 0 0 -2,-2 h -44 a 6,6 0 0 1 0,-13 z" fill="#4D5B3C"/>
+      
+    <path d="
+      M 540.18,89.82
+      A 54,54 0 1,0 556,138
+      L 556,128
+      L 518,128
+      A 7,7 0 0,1 511,121
+      L 511,119
+      A 7,7 0 0,1 518,112
+      L 538,112
+      A 36,36 0 1,1 527.45,102.55
+      A 9,9 0 0,1 540.18,89.82
+      Z
+    " fill-rule="evenodd" fill="#4D5B3C"/>
+    
+    </g>
+    
+</svg></g><g><svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 256 256" x="90" y="660" width="64" height="64" preserveAspectRatio="xMidYMid meet">
+  <title>mumukg G-Bowl 1: G-Spoon Bowl</title>
+  <g id="s064-symbol">
+    <!-- Main G-Bowl Frame in Olive (#4D5B3C) -->
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+      M 189,67
+      A 86,86 0 1,0 214,132
+      L 186,132
+      A 58,58 0 1,1 169,87
+      A 14,14 0 0,0 189,67
+      Z
+    "/>
+
+    <!-- Inward Spoon in Sage (#D9D8B8) forming G's crossbar -->
+    <g id="s064-spoon-crossbar">
+      <rect x="146" y="123" width="68" height="18" rx="9" fill="#D9D8B8"/>
+      <ellipse cx="138" cy="132" rx="24" ry="18" fill="#D9D8B8"/>
+      <ellipse cx="138" cy="132" rx="14" ry="10" fill="#EFE6D4"/>
+    </g>
+
+    <!-- Single Charming Eye Dot (Olive) -->
+    <circle cx="102" cy="116" r="9" fill="#4D5B3C"/>
+
+    <!-- Bowl Foot Stand (Olive) -->
+    <rect x="98" y="214" width="60" height="10" rx="5" fill="#4D5B3C"/>
+  </g>
+</svg></g><text x="122" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">64px</text><g><svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 256 256" x="180" y="692" width="32" height="32" preserveAspectRatio="xMidYMid meet">
+  <title>mumukg G-Bowl 1: G-Spoon Bowl</title>
+  <g id="s032-symbol">
+    <!-- Main G-Bowl Frame in Olive (#4D5B3C) -->
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+      M 189,67
+      A 86,86 0 1,0 214,132
+      L 186,132
+      A 58,58 0 1,1 169,87
+      A 14,14 0 0,0 189,67
+      Z
+    "/>
+
+    <!-- Inward Spoon in Sage (#D9D8B8) forming G's crossbar -->
+    <g id="s032-spoon-crossbar">
+      <rect x="146" y="123" width="68" height="18" rx="9" fill="#D9D8B8"/>
+      <ellipse cx="138" cy="132" rx="24" ry="18" fill="#D9D8B8"/>
+      <ellipse cx="138" cy="132" rx="14" ry="10" fill="#EFE6D4"/>
+    </g>
+
+    <!-- Single Charming Eye Dot (Olive) -->
+    <circle cx="102" cy="116" r="9" fill="#4D5B3C"/>
+
+    <!-- Bowl Foot Stand (Olive) -->
+    <rect x="98" y="214" width="60" height="10" rx="5" fill="#4D5B3C"/>
+  </g>
+</svg></g><text x="196" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">32px</text><g><svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 256 256" x="238" y="708" width="16" height="16" preserveAspectRatio="xMidYMid meet">
+  <title>mumukg G-Bowl 1: G-Spoon Bowl</title>
+  <g id="s016-symbol">
+    <!-- Main G-Bowl Frame in Olive (#4D5B3C) -->
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+      M 189,67
+      A 86,86 0 1,0 214,132
+      L 186,132
+      A 58,58 0 1,1 169,87
+      A 14,14 0 0,0 189,67
+      Z
+    "/>
+
+    <!-- Inward Spoon in Sage (#D9D8B8) forming G's crossbar -->
+    <g id="s016-spoon-crossbar">
+      <rect x="146" y="123" width="68" height="18" rx="9" fill="#D9D8B8"/>
+      <ellipse cx="138" cy="132" rx="24" ry="18" fill="#D9D8B8"/>
+      <ellipse cx="138" cy="132" rx="14" ry="10" fill="#EFE6D4"/>
+    </g>
+
+    <!-- Single Charming Eye Dot (Olive) -->
+    <circle cx="102" cy="116" r="9" fill="#4D5B3C"/>
+
+    <!-- Bowl Foot Stand (Olive) -->
+    <rect x="98" y="214" width="60" height="10" rx="5" fill="#4D5B3C"/>
+  </g>
+</svg></g><text x="246" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">16px</text><text x="90.0" y="780" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="26" font-weight="700" fill="#161616">A · G1: 스푼 바 G-볼</text><text x="90.0" y="808" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#161616" letter-spacing="1.5">RECOMMENDED</text><text x="90.0" y="842" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">안쪽 가로바가 숟가락으로 변환 + 단 하나의 눈</text><rect x="562.667" y="150" width="474.667" height="774" rx="18" fill="#fff" stroke="#e4e4e0" stroke-width="1"/><g><svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 256 256" x="592.667" y="190" width="414.667" height="300" preserveAspectRatio="xMidYMid meet">
+  <title>mumukg G-Bowl 2: Rising Spoon G-Bowl</title>
+  <g id="c1-symbol">
+    <!-- Deep Olive Bowl (Lower Half) -->
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+      M 36,120
+      H 220
+      C 216,192 178,214 128,214
+      C 78,214 40,192 36,120
+      Z
+
+      M 106,160
+      A 9,9 0 1,1 105.9,160
+      Z
+    "/>
+
+    <!-- Bowl Rim in Olive -->
+    <rect x="28" y="108" width="200" height="18" rx="9" fill="#4D5B3C"/>
+
+    <!-- Bowl Foot Stand in Olive -->
+    <rect x="98" y="214" width="60" height="10" rx="5" fill="#4D5B3C"/>
+
+    <!-- Spoon forming the upper loop & inner crossbar of 'G' in Sage -->
+    <path fill-rule="evenodd" fill="#D9D8B8" d="
+      M 88,108
+      C 88,64 120,40 160,40
+      C 196,40 216,64 216,98
+      L 216,108
+      H 192
+      V 98
+      C 192,76 178,60 160,60
+      C 134,60 112,78 112,108
+      Z
+    "/>
+
+    <!-- Dipping Spoon Head entering into center forming G's bar -->
+    <g transform="translate(154, 96)">
+      <rect x="0" y="3" width="56" height="18" rx="9" fill="#D9D8B8"/>
+      <ellipse cx="6" cy="12" rx="20" ry="15" fill="#D9D8B8"/>
+      <ellipse cx="6" cy="12" rx="11" ry="8" fill="#EFE6D4"/>
+    </g>
+  </g>
+</svg></g><g><svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 610 256" x="592.667" y="514" width="414.667" height="120" preserveAspectRatio="xMidYMid meet">
+  <title>G-Bowl 2 Lockup</title>
+  <g transform="translate(38, 43) scale(0.6640625)">
+    <g id="l1-symbol">
+    <!-- Deep Olive Bowl (Lower Half) -->
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+      M 36,120
+      H 220
+      C 216,192 178,214 128,214
+      C 78,214 40,192 36,120
+      Z
+
+      M 106,160
+      A 9,9 0 1,1 105.9,160
+      Z
+    "/>
+
+    <!-- Bowl Rim in Olive -->
+    <rect x="28" y="108" width="200" height="18" rx="9" fill="#4D5B3C"/>
+
+    <!-- Bowl Foot Stand in Olive -->
+    <rect x="98" y="214" width="60" height="10" rx="5" fill="#4D5B3C"/>
+
+    <!-- Spoon forming the upper loop & inner crossbar of 'G' in Sage -->
+    <path fill-rule="evenodd" fill="#D9D8B8" d="
+      M 88,108
+      C 88,64 120,40 160,40
+      C 196,40 216,64 216,98
+      L 216,108
+      H 192
+      V 98
+      C 192,76 178,60 160,60
+      C 134,60 112,78 112,108
+      Z
+    "/>
+
+    <!-- Dipping Spoon Head entering into center forming G's bar -->
+    <g transform="translate(154, 96)">
+      <rect x="0" y="3" width="56" height="18" rx="9" fill="#D9D8B8"/>
+      <ellipse cx="6" cy="12" rx="20" ry="15" fill="#D9D8B8"/>
+      <ellipse cx="6" cy="12" rx="11" ry="8" fill="#EFE6D4"/>
+    </g>
+  </g>
+  </g>
+  
+    <g id="l1-wordmark">
+      <path d="M 246,86 h 36 a 10,10 0 0 1 10,10 v 38 a 10,10 0 0 1 -10,10 h -36 a 10,10 0 0 1 -10,-10 v -38 a 10,10 0 0 1 10,-10 z M 250,100 a 3,3 0 0 0 -3,3 v 22 a 3,3 0 0 0 3,3 h 26 a 3,3 0 0 0 3,-3 v -22 a 3,3 0 0 0 -3,-3 z" fill-rule="evenodd" fill="#4D5B3C"/>
+      <rect x="286" y="110" width="24" height="15" rx="5" fill="#4D5B3C"/>
+      <rect x="306" y="70" width="16" height="116" rx="8" fill="#4D5B3C"/>
+      <path d="M 356,70 h 34 a 9,9 0 0 1 9,9 v 30 a 9,9 0 0 1 -9,9 h -34 a 9,9 0 0 1 -9,-9 v -30 a 9,9 0 0 1 9,-9 z M 359,83 a 3,3 0 0 0 -3,3 v 14 a 3,3 0 0 0 3,3 h 20 a 3,3 0 0 0 3,-3 v -14 a 3,3 0 0 0 -3,-3 z" fill-rule="evenodd" fill="#4D5B3C"/>
+      <rect x="394" y="89" width="20" height="14" rx="4.5" fill="#4D5B3C"/>
+      <rect x="410" y="70" width="15" height="66" rx="7.5" fill="#4D5B3C"/>
+      <path d="M 354,142 h 50 a 8,8 0 0 1 8,8 v 26 a 6,6 0 0 1 -12,0 v -19 a 2,2 0 0 0 -2,-2 h -44 a 6,6 0 0 1 0,-13 z" fill="#4D5B3C"/>
+      
+    <path d="
+      M 540.18,89.82
+      A 54,54 0 1,0 556,138
+      L 556,128
+      L 518,128
+      A 7,7 0 0,1 511,121
+      L 511,119
+      A 7,7 0 0,1 518,112
+      L 538,112
+      A 36,36 0 1,1 527.45,102.55
+      A 9,9 0 0,1 540.18,89.82
+      Z
+    " fill-rule="evenodd" fill="#4D5B3C"/>
+    
+    </g>
+    
+</svg></g><g><svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 256 256" x="592.667" y="660" width="64" height="64" preserveAspectRatio="xMidYMid meet">
+  <title>mumukg G-Bowl 2: Rising Spoon G-Bowl</title>
+  <g id="s164-symbol">
+    <!-- Deep Olive Bowl (Lower Half) -->
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+      M 36,120
+      H 220
+      C 216,192 178,214 128,214
+      C 78,214 40,192 36,120
+      Z
+
+      M 106,160
+      A 9,9 0 1,1 105.9,160
+      Z
+    "/>
+
+    <!-- Bowl Rim in Olive -->
+    <rect x="28" y="108" width="200" height="18" rx="9" fill="#4D5B3C"/>
+
+    <!-- Bowl Foot Stand in Olive -->
+    <rect x="98" y="214" width="60" height="10" rx="5" fill="#4D5B3C"/>
+
+    <!-- Spoon forming the upper loop & inner crossbar of 'G' in Sage -->
+    <path fill-rule="evenodd" fill="#D9D8B8" d="
+      M 88,108
+      C 88,64 120,40 160,40
+      C 196,40 216,64 216,98
+      L 216,108
+      H 192
+      V 98
+      C 192,76 178,60 160,60
+      C 134,60 112,78 112,108
+      Z
+    "/>
+
+    <!-- Dipping Spoon Head entering into center forming G's bar -->
+    <g transform="translate(154, 96)">
+      <rect x="0" y="3" width="56" height="18" rx="9" fill="#D9D8B8"/>
+      <ellipse cx="6" cy="12" rx="20" ry="15" fill="#D9D8B8"/>
+      <ellipse cx="6" cy="12" rx="11" ry="8" fill="#EFE6D4"/>
+    </g>
+  </g>
+</svg></g><text x="624.667" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">64px</text><g><svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 256 256" x="682.667" y="692" width="32" height="32" preserveAspectRatio="xMidYMid meet">
+  <title>mumukg G-Bowl 2: Rising Spoon G-Bowl</title>
+  <g id="s132-symbol">
+    <!-- Deep Olive Bowl (Lower Half) -->
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+      M 36,120
+      H 220
+      C 216,192 178,214 128,214
+      C 78,214 40,192 36,120
+      Z
+
+      M 106,160
+      A 9,9 0 1,1 105.9,160
+      Z
+    "/>
+
+    <!-- Bowl Rim in Olive -->
+    <rect x="28" y="108" width="200" height="18" rx="9" fill="#4D5B3C"/>
+
+    <!-- Bowl Foot Stand in Olive -->
+    <rect x="98" y="214" width="60" height="10" rx="5" fill="#4D5B3C"/>
+
+    <!-- Spoon forming the upper loop & inner crossbar of 'G' in Sage -->
+    <path fill-rule="evenodd" fill="#D9D8B8" d="
+      M 88,108
+      C 88,64 120,40 160,40
+      C 196,40 216,64 216,98
+      L 216,108
+      H 192
+      V 98
+      C 192,76 178,60 160,60
+      C 134,60 112,78 112,108
+      Z
+    "/>
+
+    <!-- Dipping Spoon Head entering into center forming G's bar -->
+    <g transform="translate(154, 96)">
+      <rect x="0" y="3" width="56" height="18" rx="9" fill="#D9D8B8"/>
+      <ellipse cx="6" cy="12" rx="20" ry="15" fill="#D9D8B8"/>
+      <ellipse cx="6" cy="12" rx="11" ry="8" fill="#EFE6D4"/>
+    </g>
+  </g>
+</svg></g><text x="698.667" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">32px</text><g><svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 256 256" x="740.667" y="708" width="16" height="16" preserveAspectRatio="xMidYMid meet">
+  <title>mumukg G-Bowl 2: Rising Spoon G-Bowl</title>
+  <g id="s116-symbol">
+    <!-- Deep Olive Bowl (Lower Half) -->
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+      M 36,120
+      H 220
+      C 216,192 178,214 128,214
+      C 78,214 40,192 36,120
+      Z
+
+      M 106,160
+      A 9,9 0 1,1 105.9,160
+      Z
+    "/>
+
+    <!-- Bowl Rim in Olive -->
+    <rect x="28" y="108" width="200" height="18" rx="9" fill="#4D5B3C"/>
+
+    <!-- Bowl Foot Stand in Olive -->
+    <rect x="98" y="214" width="60" height="10" rx="5" fill="#4D5B3C"/>
+
+    <!-- Spoon forming the upper loop & inner crossbar of 'G' in Sage -->
+    <path fill-rule="evenodd" fill="#D9D8B8" d="
+      M 88,108
+      C 88,64 120,40 160,40
+      C 196,40 216,64 216,98
+      L 216,108
+      H 192
+      V 98
+      C 192,76 178,60 160,60
+      C 134,60 112,78 112,108
+      Z
+    "/>
+
+    <!-- Dipping Spoon Head entering into center forming G's bar -->
+    <g transform="translate(154, 96)">
+      <rect x="0" y="3" width="56" height="18" rx="9" fill="#D9D8B8"/>
+      <ellipse cx="6" cy="12" rx="20" ry="15" fill="#D9D8B8"/>
+      <ellipse cx="6" cy="12" rx="11" ry="8" fill="#EFE6D4"/>
+    </g>
+  </g>
+</svg></g><text x="748.667" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">16px</text><text x="592.6666666666667" y="780" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="26" font-weight="700" fill="#161616">B · G2: 라이징 스푼 G-볼</text><text x="592.6666666666667" y="814" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">그릇 위로 스푼 곡선이 감싸며 G 외곽을 완성</text><rect x="1065.33" y="150" width="474.667" height="774" rx="18" fill="#fff" stroke="#e4e4e0" stroke-width="1"/><g><svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 256 256" x="1095.33" y="190" width="414.667" height="300" preserveAspectRatio="xMidYMid meet">
+  <title>mumukg G-Bowl 3: Smiling Spoon G</title>
+  <g id="c2-symbol">
+    <!-- Outer G-Bowl Loop (Olive) -->
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+      M 186,66
+      A 84,84 0 1,0 212,130
+      L 212,142
+      A 84,84 0 0,1 128,212
+      C 81.6,212 44,174.4 44,128
+      C 44,81.6 81.6,44 128,44
+      C 149,44 169,52 186,66
+      Z
+
+      M 128,68
+      C 94.8,68 68,94.8 68,128
+      C 68,161.2 94.8,188 128,188
+      C 152,188 173,174 182,152
+      L 182,130
+      A 24,24 0 0,0 158,106
+      L 138,106
+      A 14,14 0 0,0 124,120
+      L 124,124
+      A 14,14 0 0,0 138,138
+      L 160,138
+      C 154,152 142,162 128,162
+      C 109.2,162 94,146.8 94,128
+      C 94,109.2 109.2,94 128,94
+      C 137,94 145,97 151,103
+      L 168,86
+      C 157,75 143,68 128,68
+      Z
+    "/>
+
+    <!-- Dipping Spoon in Sage entering at the inner opening -->
+    <g transform="rotate(-30 156 128)">
+      <rect x="146" y="80" width="16" height="58" rx="8" fill="#D9D8B8"/>
+      <ellipse cx="154" cy="144" rx="20" ry="16" fill="#D9D8B8"/>
+      <ellipse cx="154" cy="144" rx="11" ry="9" fill="#EFE6D4"/>
+    </g>
+
+    <!-- Single eye dot in Olive -->
+    <circle cx="106" cy="114" r="9" fill="#4D5B3C"/>
+
+    <!-- Foot stand in Olive -->
+    <rect x="98" y="212" width="60" height="10" rx="5" fill="#4D5B3C"/>
+  </g>
+</svg></g><g><svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 610 256" x="1095.33" y="514" width="414.667" height="120" preserveAspectRatio="xMidYMid meet">
+  <title>G-Bowl 3 Lockup</title>
+  <g transform="translate(38, 43) scale(0.6640625)">
+    <g id="l2-symbol">
+    <!-- Outer G-Bowl Loop (Olive) -->
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+      M 186,66
+      A 84,84 0 1,0 212,130
+      L 212,142
+      A 84,84 0 0,1 128,212
+      C 81.6,212 44,174.4 44,128
+      C 44,81.6 81.6,44 128,44
+      C 149,44 169,52 186,66
+      Z
+
+      M 128,68
+      C 94.8,68 68,94.8 68,128
+      C 68,161.2 94.8,188 128,188
+      C 152,188 173,174 182,152
+      L 182,130
+      A 24,24 0 0,0 158,106
+      L 138,106
+      A 14,14 0 0,0 124,120
+      L 124,124
+      A 14,14 0 0,0 138,138
+      L 160,138
+      C 154,152 142,162 128,162
+      C 109.2,162 94,146.8 94,128
+      C 94,109.2 109.2,94 128,94
+      C 137,94 145,97 151,103
+      L 168,86
+      C 157,75 143,68 128,68
+      Z
+    "/>
+
+    <!-- Dipping Spoon in Sage entering at the inner opening -->
+    <g transform="rotate(-30 156 128)">
+      <rect x="146" y="80" width="16" height="58" rx="8" fill="#D9D8B8"/>
+      <ellipse cx="154" cy="144" rx="20" ry="16" fill="#D9D8B8"/>
+      <ellipse cx="154" cy="144" rx="11" ry="9" fill="#EFE6D4"/>
+    </g>
+
+    <!-- Single eye dot in Olive -->
+    <circle cx="106" cy="114" r="9" fill="#4D5B3C"/>
+
+    <!-- Foot stand in Olive -->
+    <rect x="98" y="212" width="60" height="10" rx="5" fill="#4D5B3C"/>
+  </g>
+  </g>
+  
+    <g id="l2-wordmark">
+      <path d="M 246,86 h 36 a 10,10 0 0 1 10,10 v 38 a 10,10 0 0 1 -10,10 h -36 a 10,10 0 0 1 -10,-10 v -38 a 10,10 0 0 1 10,-10 z M 250,100 a 3,3 0 0 0 -3,3 v 22 a 3,3 0 0 0 3,3 h 26 a 3,3 0 0 0 3,-3 v -22 a 3,3 0 0 0 -3,-3 z" fill-rule="evenodd" fill="#4D5B3C"/>
+      <rect x="286" y="110" width="24" height="15" rx="5" fill="#4D5B3C"/>
+      <rect x="306" y="70" width="16" height="116" rx="8" fill="#4D5B3C"/>
+      <path d="M 356,70 h 34 a 9,9 0 0 1 9,9 v 30 a 9,9 0 0 1 -9,9 h -34 a 9,9 0 0 1 -9,-9 v -30 a 9,9 0 0 1 9,-9 z M 359,83 a 3,3 0 0 0 -3,3 v 14 a 3,3 0 0 0 3,3 h 20 a 3,3 0 0 0 3,-3 v -14 a 3,3 0 0 0 -3,-3 z" fill-rule="evenodd" fill="#4D5B3C"/>
+      <rect x="394" y="89" width="20" height="14" rx="4.5" fill="#4D5B3C"/>
+      <rect x="410" y="70" width="15" height="66" rx="7.5" fill="#4D5B3C"/>
+      <path d="M 354,142 h 50 a 8,8 0 0 1 8,8 v 26 a 6,6 0 0 1 -12,0 v -19 a 2,2 0 0 0 -2,-2 h -44 a 6,6 0 0 1 0,-13 z" fill="#4D5B3C"/>
+      
+    <path d="
+      M 540.18,89.82
+      A 54,54 0 1,0 556,138
+      L 556,128
+      L 518,128
+      A 7,7 0 0,1 511,121
+      L 511,119
+      A 7,7 0 0,1 518,112
+      L 538,112
+      A 36,36 0 1,1 527.45,102.55
+      A 9,9 0 0,1 540.18,89.82
+      Z
+    " fill-rule="evenodd" fill="#4D5B3C"/>
+    
+    </g>
+    
+</svg></g><g><svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 256 256" x="1095.33" y="660" width="64" height="64" preserveAspectRatio="xMidYMid meet">
+  <title>mumukg G-Bowl 3: Smiling Spoon G</title>
+  <g id="s264-symbol">
+    <!-- Outer G-Bowl Loop (Olive) -->
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+      M 186,66
+      A 84,84 0 1,0 212,130
+      L 212,142
+      A 84,84 0 0,1 128,212
+      C 81.6,212 44,174.4 44,128
+      C 44,81.6 81.6,44 128,44
+      C 149,44 169,52 186,66
+      Z
+
+      M 128,68
+      C 94.8,68 68,94.8 68,128
+      C 68,161.2 94.8,188 128,188
+      C 152,188 173,174 182,152
+      L 182,130
+      A 24,24 0 0,0 158,106
+      L 138,106
+      A 14,14 0 0,0 124,120
+      L 124,124
+      A 14,14 0 0,0 138,138
+      L 160,138
+      C 154,152 142,162 128,162
+      C 109.2,162 94,146.8 94,128
+      C 94,109.2 109.2,94 128,94
+      C 137,94 145,97 151,103
+      L 168,86
+      C 157,75 143,68 128,68
+      Z
+    "/>
+
+    <!-- Dipping Spoon in Sage entering at the inner opening -->
+    <g transform="rotate(-30 156 128)">
+      <rect x="146" y="80" width="16" height="58" rx="8" fill="#D9D8B8"/>
+      <ellipse cx="154" cy="144" rx="20" ry="16" fill="#D9D8B8"/>
+      <ellipse cx="154" cy="144" rx="11" ry="9" fill="#EFE6D4"/>
+    </g>
+
+    <!-- Single eye dot in Olive -->
+    <circle cx="106" cy="114" r="9" fill="#4D5B3C"/>
+
+    <!-- Foot stand in Olive -->
+    <rect x="98" y="212" width="60" height="10" rx="5" fill="#4D5B3C"/>
+  </g>
+</svg></g><text x="1127.33" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">64px</text><g><svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 256 256" x="1185.33" y="692" width="32" height="32" preserveAspectRatio="xMidYMid meet">
+  <title>mumukg G-Bowl 3: Smiling Spoon G</title>
+  <g id="s232-symbol">
+    <!-- Outer G-Bowl Loop (Olive) -->
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+      M 186,66
+      A 84,84 0 1,0 212,130
+      L 212,142
+      A 84,84 0 0,1 128,212
+      C 81.6,212 44,174.4 44,128
+      C 44,81.6 81.6,44 128,44
+      C 149,44 169,52 186,66
+      Z
+
+      M 128,68
+      C 94.8,68 68,94.8 68,128
+      C 68,161.2 94.8,188 128,188
+      C 152,188 173,174 182,152
+      L 182,130
+      A 24,24 0 0,0 158,106
+      L 138,106
+      A 14,14 0 0,0 124,120
+      L 124,124
+      A 14,14 0 0,0 138,138
+      L 160,138
+      C 154,152 142,162 128,162
+      C 109.2,162 94,146.8 94,128
+      C 94,109.2 109.2,94 128,94
+      C 137,94 145,97 151,103
+      L 168,86
+      C 157,75 143,68 128,68
+      Z
+    "/>
+
+    <!-- Dipping Spoon in Sage entering at the inner opening -->
+    <g transform="rotate(-30 156 128)">
+      <rect x="146" y="80" width="16" height="58" rx="8" fill="#D9D8B8"/>
+      <ellipse cx="154" cy="144" rx="20" ry="16" fill="#D9D8B8"/>
+      <ellipse cx="154" cy="144" rx="11" ry="9" fill="#EFE6D4"/>
+    </g>
+
+    <!-- Single eye dot in Olive -->
+    <circle cx="106" cy="114" r="9" fill="#4D5B3C"/>
+
+    <!-- Foot stand in Olive -->
+    <rect x="98" y="212" width="60" height="10" rx="5" fill="#4D5B3C"/>
+  </g>
+</svg></g><text x="1201.33" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">32px</text><g><svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 256 256" x="1243.33" y="708" width="16" height="16" preserveAspectRatio="xMidYMid meet">
+  <title>mumukg G-Bowl 3: Smiling Spoon G</title>
+  <g id="s216-symbol">
+    <!-- Outer G-Bowl Loop (Olive) -->
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+      M 186,66
+      A 84,84 0 1,0 212,130
+      L 212,142
+      A 84,84 0 0,1 128,212
+      C 81.6,212 44,174.4 44,128
+      C 44,81.6 81.6,44 128,44
+      C 149,44 169,52 186,66
+      Z
+
+      M 128,68
+      C 94.8,68 68,94.8 68,128
+      C 68,161.2 94.8,188 128,188
+      C 152,188 173,174 182,152
+      L 182,130
+      A 24,24 0 0,0 158,106
+      L 138,106
+      A 14,14 0 0,0 124,120
+      L 124,124
+      A 14,14 0 0,0 138,138
+      L 160,138
+      C 154,152 142,162 128,162
+      C 109.2,162 94,146.8 94,128
+      C 94,109.2 109.2,94 128,94
+      C 137,94 145,97 151,103
+      L 168,86
+      C 157,75 143,68 128,68
+      Z
+    "/>
+
+    <!-- Dipping Spoon in Sage entering at the inner opening -->
+    <g transform="rotate(-30 156 128)">
+      <rect x="146" y="80" width="16" height="58" rx="8" fill="#D9D8B8"/>
+      <ellipse cx="154" cy="144" rx="20" ry="16" fill="#D9D8B8"/>
+      <ellipse cx="154" cy="144" rx="11" ry="9" fill="#EFE6D4"/>
+    </g>
+
+    <!-- Single eye dot in Olive -->
+    <circle cx="106" cy="114" r="9" fill="#4D5B3C"/>
+
+    <!-- Foot stand in Olive -->
+    <rect x="98" y="212" width="60" height="10" rx="5" fill="#4D5B3C"/>
+  </g>
+</svg></g><text x="1251.33" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">16px</text><text x="1095.3333333333335" y="780" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="26" font-weight="700" fill="#161616">C · G3: 스마일 스푼 G</text><text x="1095.3333333333335" y="814" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">단일 획으로 회전하는 G 볼과 비스듬히 담긴 스푼</text></svg>

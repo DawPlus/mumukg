@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title-g2">
+  <title id="title-g2">mumukg G-Bowl Concept 2 (Curved Spoon G)</title>
+  
+  <!-- Main G-Bowl: Lower half is bowl, upper-right is G's upright -->
+  <path fill-rule="evenodd" fill="#4D5B3C" d="
+    M 44,116
+    H 212
+    V 136
+    A 84,84 0 0,1 128,220
+    C 81.5,220 44,182.5 44,136
+    Z
+
+    M 100,162
+    A 8,8 0 1,1 99.9,162
+    Z
+
+    M 122,176
+    Q 138,190 154,176
+    Q 138,182 122,176
+    Z
+  "/>
+
+  <!-- Rim of Bowl -->
+  <rect x="36" y="104" width="184" height="16" rx="8" fill="#4D5B3C"/>
+
+  <!-- Spoon forming the upper loop & inner shelf of 'G' in Sage -->
+  <!-- Arc rising from left, looping over top, spoon head entering at right -->
+  <path fill-rule="evenodd" fill="#D9D8B8" d="
+    M 68,104
+    C 68,54 104,36 148,36
+    C 188,36 212,58 212,96
+    L 212,104
+    H 188
+    V 96
+    C 188,72 172,58 148,58
+    C 118,58 92,72 92,104
+    Z
+  "/>
+
+  <!-- Spoon scoop entering right waist -->
+  <g transform="translate(160, 92)">
+    <rect x="0" y="4" width="46" height="16" rx="8" fill="#D9D8B8"/>
+    <ellipse cx="6" cy="12" rx="16" ry="12" fill="#D9D8B8"/>
+    <circle cx="6" cy="12" r="6" fill="#EFE6D4"/>
+  </g>
+
+  <!-- Base foot -->
+  <rect x="100" y="220" width="56" height="10" rx="5" fill="#4D5B3C"/>
+</svg>

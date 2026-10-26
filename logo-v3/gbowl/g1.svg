@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title-g1">
+  <title id="title-g1">mumukg G-Bowl Concept 1 (Inward Spoon G)</title>
+  
+  <!-- Outer G-Bowl Body in Olive -->
+  <path fill-rule="evenodd" fill="#4D5B3C" d="
+    M 187,69
+    A 84,84 0 1,0 212,128
+    L 184,128
+    A 56,56 0 1,1 167,88
+    A 14,14 0 0,0 187,69
+    Z
+  "/>
+
+  <!-- Inward Spoon in Sage (Crossbar of G) -->
+  <g id="spoon-crossbar">
+    <!-- Spoon stem entering from right rim -->
+    <rect x="148" y="120" width="64" height="16" rx="8" fill="#D9D8B8"/>
+    <!-- Spoon scoop at center of G -->
+    <ellipse cx="140" cy="128" rx="22" ry="17" fill="#D9D8B8"/>
+    <circle cx="140" cy="128" r="9" fill="#EFE6D4"/>
+  </g>
+
+  <!-- Single Minimal Winking/Joyful Eye inside the Bowl -->
+  <circle cx="104" cy="112" r="8" fill="#4D5B3C"/>
+
+  <!-- Subtle Bowl Foot Stand at bottom -->
+  <rect x="100" y="214" width="56" height="10" rx="5" fill="#4D5B3C"/>
+</svg>

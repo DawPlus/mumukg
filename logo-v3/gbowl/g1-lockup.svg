@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 610 256" width="610" height="256" role="img">
+  <title>G-Bowl 1 Lockup</title>
+  <g transform="translate(38, 43) scale(0.6640625)">
+    <g id="symbol">
+    <!-- Main G-Bowl Frame in Olive (#4D5B3C) -->
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+      M 189,67
+      A 86,86 0 1,0 214,132
+      L 186,132
+      A 58,58 0 1,1 169,87
+      A 14,14 0 0,0 189,67
+      Z
+    "/>
+
+    <!-- Inward Spoon in Sage (#D9D8B8) forming G's crossbar -->
+    <g id="spoon-crossbar">
+      <rect x="146" y="123" width="68" height="18" rx="9" fill="#D9D8B8"/>
+      <ellipse cx="138" cy="132" rx="24" ry="18" fill="#D9D8B8"/>
+      <ellipse cx="138" cy="132" rx="14" ry="10" fill="#EFE6D4"/>
+    </g>
+
+    <!-- Single Charming Eye Dot (Olive) -->
+    <circle cx="102" cy="116" r="9" fill="#4D5B3C"/>
+
+    <!-- Bowl Foot Stand (Olive) -->
+    <rect x="98" y="214" width="60" height="10" rx="5" fill="#4D5B3C"/>
+  </g>
+  </g>
+  
+    <g id="wordmark">
+      <path d="M 246,86 h 36 a 10,10 0 0 1 10,10 v 38 a 10,10 0 0 1 -10,10 h -36 a 10,10 0 0 1 -10,-10 v -38 a 10,10 0 0 1 10,-10 z M 250,100 a 3,3 0 0 0 -3,3 v 22 a 3,3 0 0 0 3,3 h 26 a 3,3 0 0 0 3,-3 v -22 a 3,3 0 0 0 -3,-3 z" fill-rule="evenodd" fill="#4D5B3C"/>
+      <rect x="286" y="110" width="24" height="15" rx="5" fill="#4D5B3C"/>
+      <rect x="306" y="70" width="16" height="116" rx="8" fill="#4D5B3C"/>
+      <path d="M 356,70 h 34 a 9,9 0 0 1 9,9 v 30 a 9,9 0 0 1 -9,9 h -34 a 9,9 0 0 1 -9,-9 v -30 a 9,9 0 0 1 9,-9 z M 359,83 a 3,3 0 0 0 -3,3 v 14 a 3,3 0 0 0 3,3 h 20 a 3,3 0 0 0 3,-3 v -14 a 3,3 0 0 0 -3,-3 z" fill-rule="evenodd" fill="#4D5B3C"/>
+      <rect x="394" y="89" width="20" height="14" rx="4.5" fill="#4D5B3C"/>
+      <rect x="410" y="70" width="15" height="66" rx="7.5" fill="#4D5B3C"/>
+      <path d="M 354,142 h 50 a 8,8 0 0 1 8,8 v 26 a 6,6 0 0 1 -12,0 v -19 a 2,2 0 0 0 -2,-2 h -44 a 6,6 0 0 1 0,-13 z" fill="#4D5B3C"/>
+      
+    <path d="
+      M 540.18,89.82
+      A 54,54 0 1,0 556,138
+      L 556,128
+      L 518,128
+      A 7,7 0 0,1 511,121
+      L 511,119
+      A 7,7 0 0,1 518,112
+      L 538,112
+      A 36,36 0 1,1 527.45,102.55
+      A 9,9 0 0,1 540.18,89.82
+      Z
+    " fill-rule="evenodd" fill="#4D5B3C"/>
+    
+    </g>
+    
+</svg>

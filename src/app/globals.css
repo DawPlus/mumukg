@@ -8,10 +8,11 @@ html { scrollbar-width: none; -ms-overflow-style: none; }
 html::-webkit-scrollbar { display: none; }
 body { margin: 0; background: #f8fafc; color: #172033; }
 button { cursor: pointer; }
-.map-dialog { position: fixed; inset: 0; display: grid; width: 100%; max-width: none; height: 100%; max-height: none; place-items: center; margin: 0; padding: 0; overflow: auto; border: 0; background: transparent; }
+.map-dialog { position: fixed; inset: 0; display: grid; width: 100%; max-width: none; height: 100%; max-height: none; place-items: center; margin: 0; padding: 0; overflow: hidden; border: 0; background: transparent; }
 .map-dialog:not([open]) { display: none; }
 .map-scrollbar-hidden { scrollbar-width: none; -ms-overflow-style: none; }
 .map-scrollbar-hidden::-webkit-scrollbar { display: none; }
+.map-place-list { touch-action: pan-y; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; }
 .map-dialog::backdrop { background: rgb(15 23 42 / 48%); animation: backdrop-in 180ms ease-out both; }
 .map-dialog-panel { animation: dialog-in 200ms cubic-bezier(.2,.8,.2,1) both; }
 @keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }

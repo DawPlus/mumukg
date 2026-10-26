@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img">
+  <title>mumukg G-Bowl 2: Rising Spoon G-Bowl</title>
+  <g id="symbol">
+    <!-- Deep Olive Bowl (Lower Half) -->
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+      M 36,120
+      H 220
+      C 216,192 178,214 128,214
+      C 78,214 40,192 36,120
+      Z
+
+      M 106,160
+      A 9,9 0 1,1 105.9,160
+      Z
+    "/>
+
+    <!-- Bowl Rim in Olive -->
+    <rect x="28" y="108" width="200" height="18" rx="9" fill="#4D5B3C"/>
+
+    <!-- Bowl Foot Stand in Olive -->
+    <rect x="98" y="214" width="60" height="10" rx="5" fill="#4D5B3C"/>
+
+    <!-- Spoon forming the upper loop & inner crossbar of 'G' in Sage -->
+    <path fill-rule="evenodd" fill="#D9D8B8" d="
+      M 88,108
+      C 88,64 120,40 160,40
+      C 196,40 216,64 216,98
+      L 216,108
+      H 192
+      V 98
+      C 192,76 178,60 160,60
+      C 134,60 112,78 112,108
+      Z
+    "/>
+
+    <!-- Dipping Spoon Head entering into center forming G's bar -->
+    <g transform="translate(154, 96)">
+      <rect x="0" y="3" width="56" height="18" rx="9" fill="#D9D8B8"/>
+      <ellipse cx="6" cy="12" rx="20" ry="15" fill="#D9D8B8"/>
+      <ellipse cx="6" cy="12" rx="11" ry="8" fill="#EFE6D4"/>
+    </g>
+  </g>
+</svg>

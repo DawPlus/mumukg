@@ -4,3 +4,8 @@ out
 .env*
 !.env.example
 *.tsbuildinfo
+/docs/tickets/
+/handoff.md
+/acorn/.ticket.lock/
+/acorn/.ticket-transaction.json
+/acorn/.ticket-recovery/

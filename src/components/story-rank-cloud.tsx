@@ -26,8 +26,8 @@ export function StoryRankCloud({ items }: { items: FoodStory[] }) {
   if (!ranks.length || !images.length) return null;
 
   return (
-    <section className="mb-8">
-      <div className="relative mx-auto flex w-full justify-center">
+    <section className="mb-7 overflow-hidden rounded-[28px] border border-[#d9d8b8] bg-[#f7f1e3] py-3 sm:mb-9">
+      <div className="relative mx-auto flex w-full max-w-[340px] justify-center">
         <IconCloud images={images} showControl={false} />
       </div>
     </section>

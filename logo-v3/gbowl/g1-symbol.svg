@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img">
+  <title>mumukg G-Bowl 1: G-Spoon Bowl</title>
+  <g id="symbol">
+    <!-- Main G-Bowl Frame in Olive (#4D5B3C) -->
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+      M 189,67
+      A 86,86 0 1,0 214,132
+      L 186,132
+      A 58,58 0 1,1 169,87
+      A 14,14 0 0,0 189,67
+      Z
+    "/>
+
+    <!-- Inward Spoon in Sage (#D9D8B8) forming G's crossbar -->
+    <g id="spoon-crossbar">
+      <rect x="146" y="123" width="68" height="18" rx="9" fill="#D9D8B8"/>
+      <ellipse cx="138" cy="132" rx="24" ry="18" fill="#D9D8B8"/>
+      <ellipse cx="138" cy="132" rx="14" ry="10" fill="#EFE6D4"/>
+    </g>
+
+    <!-- Single Charming Eye Dot (Olive) -->
+    <circle cx="102" cy="116" r="9" fill="#4D5B3C"/>
+
+    <!-- Bowl Foot Stand (Olive) -->
+    <rect x="98" y="214" width="60" height="10" rx="5" fill="#4D5B3C"/>
+  </g>
+</svg>
