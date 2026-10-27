@@ -1,18 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { FoodIconPicker } from '@/components/food-icon-picker';
 import { Shell } from '@/components/shell';
 import { StoryRankCloud } from '@/components/story-rank-cloud';
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/components/ui/drawer';
+import { DepthDrawer } from '@/components/ui/depth-drawer';
+import { DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import {
   formatWon,
@@ -217,28 +211,40 @@ export default function StoryPage() {
         </button>
       ) : null}
 
-      <Drawer
+      <DepthDrawer
         open={open}
-        onOpenChange={(next) => {
-          setOpen(next);
-          if (!next) setError('');
+        depth={1}
+        onClose={() => {
+          setOpen(false);
+          setError('');
         }}
+        className="story-drawer !bg-[var(--cream,#efe6d4)]"
       >
-        <DrawerContent className="story-drawer max-h-[92dvh] rounded-t-[28px] border-[#d9d8b8]">
-          <DrawerHeader className="text-left">
-            <div className="flex items-center justify-between gap-3">
-              <DrawerTitle>{editing ? '기록 수정' : '새 기록'}</DrawerTitle>
-              <DrawerClose className="inline-flex h-8 items-center rounded-lg px-2.5 text-sm text-[var(--muted)] hover:bg-[var(--surface)]">
-                닫기
-              </DrawerClose>
-            </div>
-          </DrawerHeader>
-
-          <form
-            id="story-form"
-            onSubmit={submit}
-            className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pb-2"
+        <DrawerHeader className="flex-row shrink-0 items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] text-left">
+          <DrawerTitle className="text-lg font-bold leading-tight text-[var(--ink)]">
+            {editing ? '기록 수정' : '새 기록'}
+          </DrawerTitle>
+          <Button
+            type="button"
+            variant="ghost"
+            className="size-9 min-h-9 shrink-0 rounded-full !p-0 text-[var(--ink)]"
+            aria-label="전체 닫기"
+            title="전체 닫기"
+            onClick={() => {
+              setOpen(false);
+              setError('');
+            }}
           >
+            <X size={17} aria-hidden="true" />
+          </Button>
+        </DrawerHeader>
+
+        <form
+          id="story-form"
+          onSubmit={submit}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 pb-2 pt-4">
             <label className={labelClass}>
               음식 이름
               <input
@@ -325,24 +331,23 @@ export default function StoryPage() {
             {error ? (
               <p
                 role="alert"
-                className="text-[13px] text-[var(--negative,#b42318)]"
+                className="text-[13px] text-[var(--negative,#b4534b)]"
               >
                 {error}
               </p>
             ) : null}
-          </form>
+          </div>
 
-          <DrawerFooter className="pb-[calc(16px+env(safe-area-inset-bottom))]">
+          <div className="sticky bottom-0 shrink-0 border-t border-[var(--border)] bg-[var(--cream,#efe6d4)]/95 px-4 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-4">
             <Button
               type="submit"
-              form="story-form"
-              className="h-12 w-full rounded-[var(--radius-control)] bg-[var(--primary)] text-[15px] font-medium text-[var(--on-primary)] hover:bg-[var(--primary)]/90"
+              className="!h-14 !min-h-14 w-full rounded-[var(--radius-control)] !bg-[var(--ink)] text-[15px] font-medium !text-[var(--on-primary)] hover:!bg-[var(--ink)]/90"
             >
               {editing ? '변경 저장' : '기록하기'}
             </Button>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
+          </div>
+        </form>
+      </DepthDrawer>
 
       <div className="mb-6 max-w-xl">
         <input

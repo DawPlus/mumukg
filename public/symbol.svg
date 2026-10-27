@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="mumukg Symbol">
+  <title>머먹 (mumukg) 공식 심볼 (투명 배경)</title>
+  <g transform="translate(18, 14) scale(0.86)">
+    <!-- Full Stainless Silver Cutlery Spoon -->
+    <g transform="rotate(-30 168 76)">
+      <rect x="160" y="20" width="16" height="66" rx="8" fill="#BFC7CE"/>
+      <ellipse cx="168" cy="90" rx="22" ry="26" fill="#BFC7CE"/>
+      <ellipse cx="168" cy="90" rx="16" ry="19" fill="#E8ECEF"/>
+      <ellipse cx="168" cy="90" rx="19" ry="22.5" fill="none" stroke="#8D98A2" stroke-width="1.8"/>
+    </g>
+
+    <!-- Olive Bowl Body -->
+    <path fill="#4D5B3C" d="
+      M 32,118
+      H 224
+      C 220,192 180,214 128,214
+      C 76,214 36,192 32,118
+      Z
+    "/>
+
+    <!-- Ditto Face Features in Cream -->
+    <circle cx="98" cy="154" r="5.5" fill="#EFE6D4"/>
+    <circle cx="158" cy="154" r="5.5" fill="#EFE6D4"/>
+    <path d="M 116,166 Q 128,171 140,166" fill="none" stroke="#EFE6D4" stroke-width="4.5" stroke-linecap="round"/>
+
+    <!-- Bowl Rim in Warm Honey Gold -->
+    <rect x="24" y="106" width="208" height="18" rx="9" fill="#E5A83B"/>
+    <!-- Bowl Foot Stand in Warm Honey Gold -->
+    <rect x="96" y="214" width="64" height="10" rx="5" fill="#E5A83B"/>
+  </g>
+</svg>

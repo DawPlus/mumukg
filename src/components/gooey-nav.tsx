@@ -10,6 +10,7 @@ import {
   type MouseEvent,
   type ReactNode
 } from 'react';
+import Link from 'next/link';
 
 const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
@@ -139,7 +140,7 @@ const LIST_BASE = 'm-0 flex list-none flex-nowrap gap-[var(--gn-gap)] p-0';
 const LIST = `relative w-full justify-between ${LIST_BASE}`;
 const OVERLAY = `pointer-events-none invisible absolute inset-0 w-full justify-between text-[var(--gn-active-ink)] [clip-path:inset(100%)] ${LIST_BASE}`;
 const LINK_BASE =
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full border-none bg-transparent px-[var(--gn-x)] py-[var(--gn-y)] [font-family:inherit] [font-size:inherit] [line-height:inherit] font-medium no-underline';
+  'inline-flex h-full w-full items-center justify-center gap-2 whitespace-nowrap rounded-full border-none bg-transparent px-[var(--gn-x)] py-[var(--gn-y)] [font-family:inherit] [font-size:inherit] [line-height:inherit] font-medium no-underline';
 const LINK = `${LINK_BASE} cursor-pointer text-[var(--gn-muted)] transition-colors duration-200 [-webkit-tap-highlight-color:transparent] group-data-[active]:text-[var(--gn-ink)] hover:text-[var(--gn-ink)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gn-ink)]`;
 const GHOST = `${LINK_BASE} text-inherit`;
 const ICON = 'inline-flex flex-none [&_svg]:size-5';
@@ -367,6 +368,7 @@ const GooeyNav = ({
 
   const select = (index: number) => {
     if (index === current) return;
+    engineRef.current?.go(index);
     if (activeIndex === undefined) setInnerIndex(index);
     onChange?.(index, items[index]);
   };
@@ -382,6 +384,10 @@ const GooeyNav = ({
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: false });
     const pipeline = gl ? build(gl) : null;
+    let contextLost = false;
+    fallback.style.transition = reduced
+      ? 'none'
+      : `transform ${animationTime}ms cubic-bezier(.22, 1, .36, 1), width ${animationTime}ms cubic-bezier(.22, 1, .36, 1), height ${animationTime}ms cubic-bezier(.22, 1, .36, 1)`;
     fallback.style.display = pipeline ? 'none' : 'block';
     canvas.style.display = pipeline ? 'block' : 'none';
 
@@ -591,7 +597,7 @@ const GooeyNav = ({
       }
       overlay.style.visibility = 'visible';
 
-      if (!pipeline || !gl) {
+      if (!pipeline || !gl || contextLost) {
         const box = shape(target, 1);
         if (box) {
           fallback.style.transform = `translate(${box.x.toFixed(2)}px, ${box.y.toFixed(2)}px)`;
@@ -649,6 +655,13 @@ const GooeyNav = ({
       gl.uniform4f(uniforms.uHoverColor, s.hoverRgb[0], s.hoverRgb[1], s.hoverRgb[2], s.hoverRgb[3] * hover.alpha);
       gl.uniform1f(uniforms.uShadow, s.shadow);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    };
+
+    const onContextLost = () => {
+      contextLost = true;
+      fallback.style.display = 'block';
+      canvas.style.display = 'none';
+      render();
     };
 
     const frame = (now: number) => {
@@ -829,6 +842,7 @@ const GooeyNav = ({
 
     list.addEventListener('pointerover', onOver);
     list.addEventListener('pointerleave', onLeave);
+    canvas.addEventListener('webglcontextlost', onContextLost);
 
     measure();
     settle(indexRef.current);
@@ -852,6 +866,7 @@ const GooeyNav = ({
       resizeObserver.disconnect();
       list.removeEventListener('pointerover', onOver);
       list.removeEventListener('pointerleave', onLeave);
+      canvas.removeEventListener('webglcontextlost', onContextLost);
       if (gl && pipeline) {
         gl.deleteBuffer(pipeline.buffer);
         gl.deleteProgram(pipeline.program);
@@ -901,9 +916,9 @@ const GooeyNav = ({
           data-active={index === current ? '' : undefined}
         >
           {item.href ? (
-            <a href={item.href} {...shared}>
+            <Link href={item.href} {...shared}>
               {content}
-            </a>
+            </Link>
           ) : (
             <button type="button" {...shared}>
               {content}

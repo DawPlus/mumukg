@@ -1,38 +1,39 @@
-# 개발 작업 요약
+# mumukg 세션 인수인계 (2026-10-27 KST)
 
-현재 내용은 프로젝트 루트 `handoff.md`와 `README.md`를 참조하세요. Acorn 세션 재개는 소문자 `handoff.md`를 사용합니다.
+## Project / Ticket / Session
+- Project: `C:\workspace\mumukg`
+- Ticket: 없음 (`acorn/state.json`의 `activeTicket`은 `null`)
+- Branch / HEAD: `main` / `195070b`
+- Worktree: `git status --short` 105개 항목 (staged 104, unstaged 1, untracked 1). 다수의 기존 staged 변경과 `.agents/skills/logo-design-skill/` 미추적 폴더가 있음. 리셋/복원/정리 금지.
 
-# mumukg 작업 인수인계 (2026-10-27 KST)
+## Current / Completed
+- 공통 버튼은 Animate UI 기반 공유 Button, 하단 탐색은 Animate UI TabsHighlight 패턴 사용. 모바일 탭 전환 모션과 여백 조정.
+- 페이지 확대 제한, 입력 자동 확대 방지 반영.
+- 지도 상세 주소에서 도로명/지번 전환: 두 주소가 있으면 주소 문장을 눌러 전환. 복사/전화/카카오맵 액션은 주소 우측에 모음.
+- 상세 카테고리 아이콘/이름을 주소 카드 위, 테두리 바깥 가운데에 배치. Animate UI Zoom으로 Drawer 진입 시 작게 시작해 스프링으로 확대.
+- 상세 카테고리 영역 배경 제거, 카테고리 이름 대괄호 제거. Drawer 상단 여백 소폭 확대.
+- 지도 액션은 복사 📋, 전화 📞, 카카오맵 📍 이모지 사용. 카카오맵 링크는 상세/등록 정보에 있음.
+- Animate UI Toast 추가. 하단 고정, 3개 기본 제한, 같은 위치에서 누적 스택. Olive 테두리/글자와 Beige 배경, 닫기 버튼 및 진행바 없음. Toast 기본 5초, 포인터 hover/focus 중 일시정지는 라이브러리 기본 동작.
+- Toast의 누락 peer dependency 오류 해결을 위해 사용자 승인 후 `@base-ui/react` 추가 (`^1.9.0`), lockfile 갱신.
+- 더 이상 참조하지 않는 Lordicon 시험 SVG를 제거했고, 현재 UI는 이모지를 사용. AppLayout의 고립된 Lordicon 출처 푸터도 제거. `docs/development.md`의 향후 Lordicon 무료/출처 규칙은 유지.
 
-## 현재 상태
-- 브랜치: main, HEAD: c4c7376 (정리 당시). Acorn 활성 티켓 없음.
-- Acorn 진입점: AGENTS.md. 구현 제약: docs/development.md. 프로젝트 설명: README.md.
-- Git 미커밋 변경 있음. 문서 정리 후 사용자가 직접 선택하여 커밋할 예정. 커밋/푸시 자동 실행 금지.
+## Changed / Worktree
+- 이번 UI 범위: `src/app/map/page.tsx`, `src/components/ui/toast.tsx`, `src/components/app-layout.tsx`, `package.json`, `pnpm-lock.yaml`.
+- 기존 변경 다수 포함. `docs/development.md` 등 이미 staged인 변경은 임의 수정/복원하지 않음.
+- `handoff.md`는 `.gitignore` 대상이며 본 인수인계는 로컬 기록.
 
-## 이번 세션 완료
-- 기본 6색 팔레트 확정: 브랜드 Olive #4D5B3C / Sage #D9D8B8 / Cream #EFE6D4, 상태 오류 #B4534B / 경고 #A47536 / 성공 #527A60.
-- UI 제약 확정: 가로 스크롤 금지, 모바일 우선 및 태블릿/데스크톱 전체 너비 활용. 공통 토큰 정리 작업은 추후 실시.
-- .env.local 생성 및 Kakao Maps JavaScript 키 입력 흐름 마련. 키 값은 기록하거나 커밋하지 않음.
-- pnpm 패키지 설치 복구. 지도 길게 누르기 → 주변 업소 목록의 세로 스크롤 스타일 개선 (실기기 검증 전).
-- 지도 addRestaurantMarker 참조 순서 ESLint 오류 수정.
-- 외부 브라우저 확장 프로그램의 html 속성 삽입으로 나타난 hydration 경고 억제를 위해 루트 html에 suppressHydrationWarning 적용.
-- 먹스토리 UI 리뉴얼: 전체 너비 편집형 화면, 반응형 1/2/3열 카드, 검색·아이콘 구름·기록 버튼·Drawer 스타일 개선. 기존 저장/검색/등록·수정·삭제 로직 유지.
-- README 및 본 인수인계 문서 현행화.
+## Evidence / Verification
+- `codex mcp list`: `shadcn` MCP enabled로 표시됨(인증 열은 Unsupported). 현재 세션의 `mcp__shadcn` 도구 호출은 성공.
+- 소스 검토와 대상 파일 `git diff --check` 통과.
+- 사용자 지침에 따라 테스트, 타입 검사, 린트, 브라우저/모바일 확인은 실행하지 않음. 렌더링/모바일 실기기는 미검증.
+- 로컬에 `node_modules/.bin/acorn-kit` 없음. 이 프로젝트에는 active ticket 없음. 상태 파일의 pending gates는 ticketless 작업의 완료 판정에 사용하지 않음.
 
-## 검사 증거
-- 먹스토리 수정 직후: pnpm typecheck PASS, pnpm exec eslint src/app/story/page.tsx src/components/story-rank-cloud.tsx src/components/shell.tsx PASS, pnpm build PASS.
-- 지도 수정 직후: pnpm exec eslint src/app/map/page.tsx PASS, pnpm typecheck PASS.
-- 실제 모바일 터치 스크롤, Hydration 브라우저 재현, 반응형 시각 테스트는 미검증. 문서만 정리한 이번 단계에서는 빌드 재실행하지 않음.
+## Decisions / Blockers
+- `docs/development.md` 기준 적용. Animate UI 전체 변환 금지, 필요한 요소만 사용.
+- 새 Lordicon 아이콘은 무료/출처 표기 기준을 계속 따름. 현재 화면에서 시험 아이콘은 제거하고 이모지 사용.
+- 기존 staged 작업 및 로고 산출물 등은 보존. 커밋/배포하지 않음.
 
-## 다음 작업 / 결정 대기
-1. /story 실기기 또는 브라우저에서 카드·랭킹·입력 Drawer와 화면 너비 점검. 기능 변경 없이 필요시 디자인 보정.
-2. /map 주변 업소 목록 터치 스크롤, 카카오 API 도메인/검색·저장 흐름 실사용 검증.
-3. 다른 화면의 좁은 컨테이너와 하단 탭을 반응형 규칙에 맞춰 단계적으로 개선.
-4. 친구 3~4명의 공유 맛집 데이터 및 랜덤메뉴 '집에서/나가서' 흐름은 기획 논의 상태이며 구현하지 않음.
-5. 그룹 공유 DB/인증, 기록 카테고리 추가 등 데이터 구조 변경은 확정 후 별도 작업.
-
-## 다음 세션 진입
-1. AGENTS.md 확인 후 이 handoff.md 읽기.
-2. git status, Acorn BOARD/state 확인하여 기록과 현재 상태 대조.
-3. README.md 및 docs/development.md를 필요한 범위에서 확인.
-4. 사용자가 지정하는 해당 화면만 변경하고 최소 검증 실행.
+## Resume: exact first steps
+1. 이 handoff와 `git status --short`, `codex mcp list` 재확인.
+2. 기존 staged/untracked 변경을 보존.
+3. 사용자가 원할 때에만 테스트/타입 검사/린트 및 지도 상세 Drawer 브라우저/모바일 QA.

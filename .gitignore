@@ -4,6 +4,8 @@ out
 .env*
 !.env.example
 *.tsbuildinfo
+/certificates/*.pem
+/certificates/mkcert.exe
 /docs/tickets/
 /handoff.md
 /acorn/.ticket.lock/

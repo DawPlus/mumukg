@@ -9,7 +9,7 @@
       <ellipse cx="168" cy="90" rx="22" ry="26" fill="#D9D8B8"/>
     </g>
 
-    <!-- Bowl Body in Olive -->
+    <!-- Bowl Body in Olive with 2 Eyes and Smile -->
     <path fill-rule="evenodd" fill="#4D5B3C" d="
       M 32,118
       H 224
@@ -30,10 +30,6 @@
       Q 128,174 106,164
       Z
     "/>
-
-    <!-- Sage Accent Cheeks -->
-    <circle cx="68" cy="154" r="8" fill="#D9D8B8"/>
-    <circle cx="188" cy="154" r="8" fill="#D9D8B8"/>
 
     <!-- Bowl Rim in Olive -->
     <rect x="24" y="106" width="208" height="18" rx="9" fill="#4D5B3C"/>

@@ -1,0 +1,500 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1600" height="1034" viewBox="0 0 1600 1034"><rect width="1600" height="1034" fill="#f7f7f4"/><text x="60" y="78" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="40" font-weight="700" fill="#161616">머먹 — 심볼 테두리 컬러 적용 시안</text><text x="60" y="116" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="20" fill="#6b6b6b">Olive #4D5B3C · Sage #D9D8B8 · Cream #EFE6D4 + Accent Border</text><rect x="60" y="150" width="474.667" height="824" rx="18" fill="#fff" stroke="#161616" stroke-width="2"/><g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="90" y="190" width="414.667" height="300" preserveAspectRatio="xMidYMid meet">
+  <title>머먹 심볼 - 변형 1 (골든 옐로우 림)</title>
+  <rect width="256" height="256" rx="56" fill="#EFE6D4"/>
+  <g transform="translate(18, 14) scale(0.86)">
+    <g transform="rotate(-30 168 76)">
+      <rect x="160" y="20" width="16" height="66" rx="8" fill="#D9D8B8"/>
+      <ellipse cx="168" cy="90" rx="22" ry="26" fill="#D9D8B8"/>
+    </g>
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+    M 32,118
+    H 224
+    C 220,192 180,214 128,214
+    C 76,214 36,192 32,118
+    Z
+
+    M 86,146
+    A 8,8 0 1,1 85.9,146
+    Z
+
+    M 170,146
+    A 8,8 0 1,1 169.9,146
+    Z
+
+    M 106,164
+    Q 128,184 150,164
+    Q 128,174 106,164
+    Z
+    "/>
+    <rect x="24" y="106" width="208" height="18" rx="9" fill="#E5A83B"/>
+    <rect x="96" y="214" width="64" height="10" rx="5" fill="#E5A83B"/>
+  </g>
+</svg></g><g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 470 256" x="90" y="514" width="414.667" height="170" preserveAspectRatio="xMidYMid meet">
+  <title>머먹 락업 - 골든 옐로우 림</title>
+  <g transform="translate(38, 43) scale(0.6640625)">
+    <g transform="rotate(-30 168 76)">
+      <rect x="160" y="20" width="16" height="66" rx="8" fill="#D9D8B8"/>
+      <ellipse cx="168" cy="90" rx="22" ry="26" fill="#D9D8B8"/>
+    </g>
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+    M 32,118
+    H 224
+    C 220,192 180,214 128,214
+    C 76,214 36,192 32,118
+    Z
+
+    M 86,146
+    A 8,8 0 1,1 85.9,146
+    Z
+
+    M 170,146
+    A 8,8 0 1,1 169.9,146
+    Z
+
+    M 106,164
+    Q 128,184 150,164
+    Q 128,174 106,164
+    Z
+    "/>
+    <rect x="24" y="106" width="208" height="18" rx="9" fill="#E5A83B"/>
+    <rect x="96" y="214" width="64" height="10" rx="5" fill="#E5A83B"/>
+  </g>
+  
+    <g id="l0-wordmark">
+      <path d="M 246,86 h 36 a 10,10 0 0 1 10,10 v 38 a 10,10 0 0 1 -10,10 h -36 a 10,10 0 0 1 -10,-10 v -38 a 10,10 0 0 1 10,-10 z M 250,100 a 3,3 0 0 0 -3,3 v 22 a 3,3 0 0 0 3,3 h 26 a 3,3 0 0 0 3,-3 v -22 a 3,3 0 0 0 -3,-3 z" fill-rule="evenodd" fill="#4D5B3C"/>
+      <rect x="286" y="110" width="24" height="15" rx="5" fill="#4D5B3C"/>
+      <rect x="306" y="70" width="16" height="116" rx="8" fill="#4D5B3C"/>
+      <path d="M 356,70 h 34 a 9,9 0 0 1 9,9 v 30 a 9,9 0 0 1 -9,9 h -34 a 9,9 0 0 1 -9,-9 v -30 a 9,9 0 0 1 9,-9 z M 359,83 a 3,3 0 0 0 -3,3 v 14 a 3,3 0 0 0 3,3 h 20 a 3,3 0 0 0 3,-3 v -14 a 3,3 0 0 0 -3,-3 z" fill-rule="evenodd" fill="#4D5B3C"/>
+      <rect x="394" y="89" width="20" height="14" rx="4.5" fill="#4D5B3C"/>
+      <rect x="410" y="70" width="15" height="66" rx="7.5" fill="#4D5B3C"/>
+      <path d="M 354,142 h 50 a 8,8 0 0 1 8,8 v 26 a 6,6 0 0 1 -12,0 v -19 a 2,2 0 0 0 -2,-2 h -44 a 6,6 0 0 1 0,-13 z" fill="#4D5B3C"/>
+    </g>
+    
+</svg></g><g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="90" y="710" width="64" height="64" preserveAspectRatio="xMidYMid meet">
+  <title>머먹 심볼 - 변형 1 (골든 옐로우 림)</title>
+  <rect width="256" height="256" rx="56" fill="#EFE6D4"/>
+  <g transform="translate(18, 14) scale(0.86)">
+    <g transform="rotate(-30 168 76)">
+      <rect x="160" y="20" width="16" height="66" rx="8" fill="#D9D8B8"/>
+      <ellipse cx="168" cy="90" rx="22" ry="26" fill="#D9D8B8"/>
+    </g>
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+    M 32,118
+    H 224
+    C 220,192 180,214 128,214
+    C 76,214 36,192 32,118
+    Z
+
+    M 86,146
+    A 8,8 0 1,1 85.9,146
+    Z
+
+    M 170,146
+    A 8,8 0 1,1 169.9,146
+    Z
+
+    M 106,164
+    Q 128,184 150,164
+    Q 128,174 106,164
+    Z
+    "/>
+    <rect x="24" y="106" width="208" height="18" rx="9" fill="#E5A83B"/>
+    <rect x="96" y="214" width="64" height="10" rx="5" fill="#E5A83B"/>
+  </g>
+</svg></g><text x="122" y="794" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">64px</text><g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="180" y="742" width="32" height="32" preserveAspectRatio="xMidYMid meet">
+  <title>머먹 심볼 - 변형 1 (골든 옐로우 림)</title>
+  <rect width="256" height="256" rx="56" fill="#EFE6D4"/>
+  <g transform="translate(18, 14) scale(0.86)">
+    <g transform="rotate(-30 168 76)">
+      <rect x="160" y="20" width="16" height="66" rx="8" fill="#D9D8B8"/>
+      <ellipse cx="168" cy="90" rx="22" ry="26" fill="#D9D8B8"/>
+    </g>
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+    M 32,118
+    H 224
+    C 220,192 180,214 128,214
+    C 76,214 36,192 32,118
+    Z
+
+    M 86,146
+    A 8,8 0 1,1 85.9,146
+    Z
+
+    M 170,146
+    A 8,8 0 1,1 169.9,146
+    Z
+
+    M 106,164
+    Q 128,184 150,164
+    Q 128,174 106,164
+    Z
+    "/>
+    <rect x="24" y="106" width="208" height="18" rx="9" fill="#E5A83B"/>
+    <rect x="96" y="214" width="64" height="10" rx="5" fill="#E5A83B"/>
+  </g>
+</svg></g><text x="196" y="794" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">32px</text><g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="238" y="758" width="16" height="16" preserveAspectRatio="xMidYMid meet">
+  <title>머먹 심볼 - 변형 1 (골든 옐로우 림)</title>
+  <rect width="256" height="256" rx="56" fill="#EFE6D4"/>
+  <g transform="translate(18, 14) scale(0.86)">
+    <g transform="rotate(-30 168 76)">
+      <rect x="160" y="20" width="16" height="66" rx="8" fill="#D9D8B8"/>
+      <ellipse cx="168" cy="90" rx="22" ry="26" fill="#D9D8B8"/>
+    </g>
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+    M 32,118
+    H 224
+    C 220,192 180,214 128,214
+    C 76,214 36,192 32,118
+    Z
+
+    M 86,146
+    A 8,8 0 1,1 85.9,146
+    Z
+
+    M 170,146
+    A 8,8 0 1,1 169.9,146
+    Z
+
+    M 106,164
+    Q 128,184 150,164
+    Q 128,174 106,164
+    Z
+    "/>
+    <rect x="24" y="106" width="208" height="18" rx="9" fill="#E5A83B"/>
+    <rect x="96" y="214" width="64" height="10" rx="5" fill="#E5A83B"/>
+  </g>
+</svg></g><text x="246" y="794" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">16px</text><text x="90.0" y="830" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="26" font-weight="700" fill="#161616">A · 골든 허니 림 (Golden Rim)</text><text x="90.0" y="858" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#161616" letter-spacing="1.5">RECOMMENDED</text><text x="90.0" y="892" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">따뜻한 머스터드 옐로우(#E5A83B) 림과 받침으로 에나멜웨어 감성과 식욕을</text><text x="90.0" y="918" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">살린 안</text><rect x="562.667" y="150" width="474.667" height="824" rx="18" fill="#fff" stroke="#e4e4e0" stroke-width="1"/><g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="592.667" y="190" width="414.667" height="300" preserveAspectRatio="xMidYMid meet">
+  <title>머먹 심볼 - 변형 2 (코랄 테라코타 림)</title>
+  <rect width="256" height="256" rx="56" fill="#EFE6D4"/>
+  <g transform="translate(18, 14) scale(0.86)">
+    <g transform="rotate(-30 168 76)">
+      <rect x="160" y="20" width="16" height="66" rx="8" fill="#D9D8B8"/>
+      <ellipse cx="168" cy="90" rx="22" ry="26" fill="#D9D8B8"/>
+    </g>
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+    M 32,118
+    H 224
+    C 220,192 180,214 128,214
+    C 76,214 36,192 32,118
+    Z
+
+    M 86,146
+    A 8,8 0 1,1 85.9,146
+    Z
+
+    M 170,146
+    A 8,8 0 1,1 169.9,146
+    Z
+
+    M 106,164
+    Q 128,184 150,164
+    Q 128,174 106,164
+    Z
+    "/>
+    <rect x="24" y="106" width="208" height="18" rx="9" fill="#D66843"/>
+    <rect x="96" y="214" width="64" height="10" rx="5" fill="#D66843"/>
+  </g>
+</svg></g><g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 470 256" x="592.667" y="514" width="414.667" height="170" preserveAspectRatio="xMidYMid meet">
+  <title>머먹 락업 - 코랄 테라코타 림</title>
+  <g transform="translate(38, 43) scale(0.6640625)">
+    <g transform="rotate(-30 168 76)">
+      <rect x="160" y="20" width="16" height="66" rx="8" fill="#D9D8B8"/>
+      <ellipse cx="168" cy="90" rx="22" ry="26" fill="#D9D8B8"/>
+    </g>
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+    M 32,118
+    H 224
+    C 220,192 180,214 128,214
+    C 76,214 36,192 32,118
+    Z
+
+    M 86,146
+    A 8,8 0 1,1 85.9,146
+    Z
+
+    M 170,146
+    A 8,8 0 1,1 169.9,146
+    Z
+
+    M 106,164
+    Q 128,184 150,164
+    Q 128,174 106,164
+    Z
+    "/>
+    <rect x="24" y="106" width="208" height="18" rx="9" fill="#D66843"/>
+    <rect x="96" y="214" width="64" height="10" rx="5" fill="#D66843"/>
+  </g>
+  
+    <g id="l1-wordmark">
+      <path d="M 246,86 h 36 a 10,10 0 0 1 10,10 v 38 a 10,10 0 0 1 -10,10 h -36 a 10,10 0 0 1 -10,-10 v -38 a 10,10 0 0 1 10,-10 z M 250,100 a 3,3 0 0 0 -3,3 v 22 a 3,3 0 0 0 3,3 h 26 a 3,3 0 0 0 3,-3 v -22 a 3,3 0 0 0 -3,-3 z" fill-rule="evenodd" fill="#4D5B3C"/>
+      <rect x="286" y="110" width="24" height="15" rx="5" fill="#4D5B3C"/>
+      <rect x="306" y="70" width="16" height="116" rx="8" fill="#4D5B3C"/>
+      <path d="M 356,70 h 34 a 9,9 0 0 1 9,9 v 30 a 9,9 0 0 1 -9,9 h -34 a 9,9 0 0 1 -9,-9 v -30 a 9,9 0 0 1 9,-9 z M 359,83 a 3,3 0 0 0 -3,3 v 14 a 3,3 0 0 0 3,3 h 20 a 3,3 0 0 0 3,-3 v -14 a 3,3 0 0 0 -3,-3 z" fill-rule="evenodd" fill="#4D5B3C"/>
+      <rect x="394" y="89" width="20" height="14" rx="4.5" fill="#4D5B3C"/>
+      <rect x="410" y="70" width="15" height="66" rx="7.5" fill="#4D5B3C"/>
+      <path d="M 354,142 h 50 a 8,8 0 0 1 8,8 v 26 a 6,6 0 0 1 -12,0 v -19 a 2,2 0 0 0 -2,-2 h -44 a 6,6 0 0 1 0,-13 z" fill="#4D5B3C"/>
+    </g>
+    
+</svg></g><g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="592.667" y="710" width="64" height="64" preserveAspectRatio="xMidYMid meet">
+  <title>머먹 심볼 - 변형 2 (코랄 테라코타 림)</title>
+  <rect width="256" height="256" rx="56" fill="#EFE6D4"/>
+  <g transform="translate(18, 14) scale(0.86)">
+    <g transform="rotate(-30 168 76)">
+      <rect x="160" y="20" width="16" height="66" rx="8" fill="#D9D8B8"/>
+      <ellipse cx="168" cy="90" rx="22" ry="26" fill="#D9D8B8"/>
+    </g>
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+    M 32,118
+    H 224
+    C 220,192 180,214 128,214
+    C 76,214 36,192 32,118
+    Z
+
+    M 86,146
+    A 8,8 0 1,1 85.9,146
+    Z
+
+    M 170,146
+    A 8,8 0 1,1 169.9,146
+    Z
+
+    M 106,164
+    Q 128,184 150,164
+    Q 128,174 106,164
+    Z
+    "/>
+    <rect x="24" y="106" width="208" height="18" rx="9" fill="#D66843"/>
+    <rect x="96" y="214" width="64" height="10" rx="5" fill="#D66843"/>
+  </g>
+</svg></g><text x="624.667" y="794" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">64px</text><g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="682.667" y="742" width="32" height="32" preserveAspectRatio="xMidYMid meet">
+  <title>머먹 심볼 - 변형 2 (코랄 테라코타 림)</title>
+  <rect width="256" height="256" rx="56" fill="#EFE6D4"/>
+  <g transform="translate(18, 14) scale(0.86)">
+    <g transform="rotate(-30 168 76)">
+      <rect x="160" y="20" width="16" height="66" rx="8" fill="#D9D8B8"/>
+      <ellipse cx="168" cy="90" rx="22" ry="26" fill="#D9D8B8"/>
+    </g>
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+    M 32,118
+    H 224
+    C 220,192 180,214 128,214
+    C 76,214 36,192 32,118
+    Z
+
+    M 86,146
+    A 8,8 0 1,1 85.9,146
+    Z
+
+    M 170,146
+    A 8,8 0 1,1 169.9,146
+    Z
+
+    M 106,164
+    Q 128,184 150,164
+    Q 128,174 106,164
+    Z
+    "/>
+    <rect x="24" y="106" width="208" height="18" rx="9" fill="#D66843"/>
+    <rect x="96" y="214" width="64" height="10" rx="5" fill="#D66843"/>
+  </g>
+</svg></g><text x="698.667" y="794" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">32px</text><g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="740.667" y="758" width="16" height="16" preserveAspectRatio="xMidYMid meet">
+  <title>머먹 심볼 - 변형 2 (코랄 테라코타 림)</title>
+  <rect width="256" height="256" rx="56" fill="#EFE6D4"/>
+  <g transform="translate(18, 14) scale(0.86)">
+    <g transform="rotate(-30 168 76)">
+      <rect x="160" y="20" width="16" height="66" rx="8" fill="#D9D8B8"/>
+      <ellipse cx="168" cy="90" rx="22" ry="26" fill="#D9D8B8"/>
+    </g>
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+    M 32,118
+    H 224
+    C 220,192 180,214 128,214
+    C 76,214 36,192 32,118
+    Z
+
+    M 86,146
+    A 8,8 0 1,1 85.9,146
+    Z
+
+    M 170,146
+    A 8,8 0 1,1 169.9,146
+    Z
+
+    M 106,164
+    Q 128,184 150,164
+    Q 128,174 106,164
+    Z
+    "/>
+    <rect x="24" y="106" width="208" height="18" rx="9" fill="#D66843"/>
+    <rect x="96" y="214" width="64" height="10" rx="5" fill="#D66843"/>
+  </g>
+</svg></g><text x="748.667" y="794" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">16px</text><text x="592.6666666666667" y="830" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="26" font-weight="700" fill="#161616">B · 코랄 테라코타 림 (Coral Rim)</text><text x="592.6666666666667" y="864" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">식욕을 돋우는 감각적인 테라코타 코랄(#D66843) 림 포인트</text><rect x="1065.33" y="150" width="474.667" height="824" rx="18" fill="#fff" stroke="#e4e4e0" stroke-width="1"/><g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="1095.33" y="190" width="414.667" height="300" preserveAspectRatio="xMidYMid meet">
+  <title>머먹 심볼 - 변형 3 (골든 림과 타일 테두리 프레임)</title>
+  <rect width="256" height="256" rx="56" fill="#EFE6D4"/>
+  <rect x="10" y="10" width="236" height="236" rx="46" fill="none" stroke="#E5A83B" stroke-width="4"/>
+  <g transform="translate(18, 14) scale(0.86)">
+    <g transform="rotate(-30 168 76)">
+      <rect x="160" y="20" width="16" height="66" rx="8" fill="#D9D8B8"/>
+      <ellipse cx="168" cy="90" rx="22" ry="26" fill="#D9D8B8"/>
+    </g>
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+    M 32,118
+    H 224
+    C 220,192 180,214 128,214
+    C 76,214 36,192 32,118
+    Z
+
+    M 86,146
+    A 8,8 0 1,1 85.9,146
+    Z
+
+    M 170,146
+    A 8,8 0 1,1 169.9,146
+    Z
+
+    M 106,164
+    Q 128,184 150,164
+    Q 128,174 106,164
+    Z
+    "/>
+    <rect x="24" y="106" width="208" height="18" rx="9" fill="#E5A83B"/>
+    <rect x="96" y="214" width="64" height="10" rx="5" fill="#E5A83B"/>
+  </g>
+</svg></g><g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 470 256" x="1095.33" y="514" width="414.667" height="170" preserveAspectRatio="xMidYMid meet">
+  <title>머먹 락업 - 골든 림과 프레임</title>
+  <g transform="translate(38, 43) scale(0.6640625)">
+    <g transform="rotate(-30 168 76)">
+      <rect x="160" y="20" width="16" height="66" rx="8" fill="#D9D8B8"/>
+      <ellipse cx="168" cy="90" rx="22" ry="26" fill="#D9D8B8"/>
+    </g>
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+    M 32,118
+    H 224
+    C 220,192 180,214 128,214
+    C 76,214 36,192 32,118
+    Z
+
+    M 86,146
+    A 8,8 0 1,1 85.9,146
+    Z
+
+    M 170,146
+    A 8,8 0 1,1 169.9,146
+    Z
+
+    M 106,164
+    Q 128,184 150,164
+    Q 128,174 106,164
+    Z
+    "/>
+    <rect x="24" y="106" width="208" height="18" rx="9" fill="#E5A83B"/>
+    <rect x="96" y="214" width="64" height="10" rx="5" fill="#E5A83B"/>
+  </g>
+  
+    <g id="l2-wordmark">
+      <path d="M 246,86 h 36 a 10,10 0 0 1 10,10 v 38 a 10,10 0 0 1 -10,10 h -36 a 10,10 0 0 1 -10,-10 v -38 a 10,10 0 0 1 10,-10 z M 250,100 a 3,3 0 0 0 -3,3 v 22 a 3,3 0 0 0 3,3 h 26 a 3,3 0 0 0 3,-3 v -22 a 3,3 0 0 0 -3,-3 z" fill-rule="evenodd" fill="#4D5B3C"/>
+      <rect x="286" y="110" width="24" height="15" rx="5" fill="#4D5B3C"/>
+      <rect x="306" y="70" width="16" height="116" rx="8" fill="#4D5B3C"/>
+      <path d="M 356,70 h 34 a 9,9 0 0 1 9,9 v 30 a 9,9 0 0 1 -9,9 h -34 a 9,9 0 0 1 -9,-9 v -30 a 9,9 0 0 1 9,-9 z M 359,83 a 3,3 0 0 0 -3,3 v 14 a 3,3 0 0 0 3,3 h 20 a 3,3 0 0 0 3,-3 v -14 a 3,3 0 0 0 -3,-3 z" fill-rule="evenodd" fill="#4D5B3C"/>
+      <rect x="394" y="89" width="20" height="14" rx="4.5" fill="#4D5B3C"/>
+      <rect x="410" y="70" width="15" height="66" rx="7.5" fill="#4D5B3C"/>
+      <path d="M 354,142 h 50 a 8,8 0 0 1 8,8 v 26 a 6,6 0 0 1 -12,0 v -19 a 2,2 0 0 0 -2,-2 h -44 a 6,6 0 0 1 0,-13 z" fill="#4D5B3C"/>
+    </g>
+    
+</svg></g><g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="1095.33" y="710" width="64" height="64" preserveAspectRatio="xMidYMid meet">
+  <title>머먹 심볼 - 변형 3 (골든 림과 타일 테두리 프레임)</title>
+  <rect width="256" height="256" rx="56" fill="#EFE6D4"/>
+  <rect x="10" y="10" width="236" height="236" rx="46" fill="none" stroke="#E5A83B" stroke-width="4"/>
+  <g transform="translate(18, 14) scale(0.86)">
+    <g transform="rotate(-30 168 76)">
+      <rect x="160" y="20" width="16" height="66" rx="8" fill="#D9D8B8"/>
+      <ellipse cx="168" cy="90" rx="22" ry="26" fill="#D9D8B8"/>
+    </g>
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+    M 32,118
+    H 224
+    C 220,192 180,214 128,214
+    C 76,214 36,192 32,118
+    Z
+
+    M 86,146
+    A 8,8 0 1,1 85.9,146
+    Z
+
+    M 170,146
+    A 8,8 0 1,1 169.9,146
+    Z
+
+    M 106,164
+    Q 128,184 150,164
+    Q 128,174 106,164
+    Z
+    "/>
+    <rect x="24" y="106" width="208" height="18" rx="9" fill="#E5A83B"/>
+    <rect x="96" y="214" width="64" height="10" rx="5" fill="#E5A83B"/>
+  </g>
+</svg></g><text x="1127.33" y="794" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">64px</text><g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="1185.33" y="742" width="32" height="32" preserveAspectRatio="xMidYMid meet">
+  <title>머먹 심볼 - 변형 3 (골든 림과 타일 테두리 프레임)</title>
+  <rect width="256" height="256" rx="56" fill="#EFE6D4"/>
+  <rect x="10" y="10" width="236" height="236" rx="46" fill="none" stroke="#E5A83B" stroke-width="4"/>
+  <g transform="translate(18, 14) scale(0.86)">
+    <g transform="rotate(-30 168 76)">
+      <rect x="160" y="20" width="16" height="66" rx="8" fill="#D9D8B8"/>
+      <ellipse cx="168" cy="90" rx="22" ry="26" fill="#D9D8B8"/>
+    </g>
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+    M 32,118
+    H 224
+    C 220,192 180,214 128,214
+    C 76,214 36,192 32,118
+    Z
+
+    M 86,146
+    A 8,8 0 1,1 85.9,146
+    Z
+
+    M 170,146
+    A 8,8 0 1,1 169.9,146
+    Z
+
+    M 106,164
+    Q 128,184 150,164
+    Q 128,174 106,164
+    Z
+    "/>
+    <rect x="24" y="106" width="208" height="18" rx="9" fill="#E5A83B"/>
+    <rect x="96" y="214" width="64" height="10" rx="5" fill="#E5A83B"/>
+  </g>
+</svg></g><text x="1201.33" y="794" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">32px</text><g><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" x="1243.33" y="758" width="16" height="16" preserveAspectRatio="xMidYMid meet">
+  <title>머먹 심볼 - 변형 3 (골든 림과 타일 테두리 프레임)</title>
+  <rect width="256" height="256" rx="56" fill="#EFE6D4"/>
+  <rect x="10" y="10" width="236" height="236" rx="46" fill="none" stroke="#E5A83B" stroke-width="4"/>
+  <g transform="translate(18, 14) scale(0.86)">
+    <g transform="rotate(-30 168 76)">
+      <rect x="160" y="20" width="16" height="66" rx="8" fill="#D9D8B8"/>
+      <ellipse cx="168" cy="90" rx="22" ry="26" fill="#D9D8B8"/>
+    </g>
+    <path fill-rule="evenodd" fill="#4D5B3C" d="
+    M 32,118
+    H 224
+    C 220,192 180,214 128,214
+    C 76,214 36,192 32,118
+    Z
+
+    M 86,146
+    A 8,8 0 1,1 85.9,146
+    Z
+
+    M 170,146
+    A 8,8 0 1,1 169.9,146
+    Z
+
+    M 106,164
+    Q 128,184 150,164
+    Q 128,174 106,164
+    Z
+    "/>
+    <rect x="24" y="106" width="208" height="18" rx="9" fill="#E5A83B"/>
+    <rect x="96" y="214" width="64" height="10" rx="5" fill="#E5A83B"/>
+  </g>
+</svg></g><text x="1251.33" y="794" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">16px</text><text x="1095.3333333333335" y="830" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="26" font-weight="700" fill="#161616">C · 골든 림 + 타일 액센트 프레임 (Framed)</text><text x="1095.3333333333335" y="864" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">골든 옐로우 림에 앱 타일 외곽 프레임 라인까지 매칭하여 완성도를 높인 안</text></svg>

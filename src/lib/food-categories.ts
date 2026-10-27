@@ -10,8 +10,14 @@ const categoryIcons: Record<string, string> = {
 };
 
 export function getFoodCategory(categoryName: string, groupCode?: string) {
-  if (groupCode === 'CE7' || categoryName.includes('카페')) return '디저트';
-  return foodCategories.find((category) => categoryName.includes(category)) ?? '기타';
+  const path = categoryName.split('>').map((part) => part.trim());
+  if (groupCode === 'CE7' || path.includes('카페')) return '디저트';
+  const category = path[0] === '음식점' ? path[1] : path[0];
+  return foodCategories.find((item) => item === category) ?? '기타';
+}
+
+export function getFoodSubcategory(categoryName: string) {
+  return categoryName.split('>').pop()?.trim() ?? categoryName;
 }
 
 export function getFoodIcon(categoryName: string) {

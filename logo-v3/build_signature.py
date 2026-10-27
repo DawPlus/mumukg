@@ -4,7 +4,7 @@ C_OLIVE = "#4D5B3C"  # Primary Ink / Active UI
 C_SAGE  = "#D9D8B8"  # Sage / Khaki (Secondary / Surface)
 C_CREAM = "#EFE6D4"  # Cream / Beige (Base Background / Contrast)
 
-def make_wordmark_colored(ox=236, oy=70):
+def make_wordmark_colored(ox=236, oy=70, include_g=False):
     # '머'
     m1_outer = f"M {ox+10},{oy+16} h 36 a 10,10 0 0 1 10,10 v 38 a 10,10 0 0 1 -10,10 h -36 a 10,10 0 0 1 -10,-10 v -38 a 10,10 0 0 1 10,-10 z"
     m1_inner = f"M {ox+14},{oy+30} a 3,3 0 0 0 -3,3 v 22 a 3,3 0 0 0 3,3 h 26 a 3,3 0 0 0 3,-3 v -22 a 3,3 0 0 0 -3,-3 z"
@@ -20,23 +20,24 @@ def make_wordmark_colored(ox=236, oy=70):
     eo2_stem = f'<rect x="{ox+174}" y="{oy}" width="15" height="66" rx="7.5" fill="{C_OLIVE}"/>'
     g_batchim = f'<path d="M {ox+118},{oy+72} h 50 a 8,8 0 0 1 8,8 v 26 a 6,6 0 0 1 -12,0 v -19 a 2,2 0 0 0 -2,-2 h -44 a 6,6 0 0 1 0,-13 z" fill="{C_OLIVE}"/>'
 
-    # 'G' in Olive
-    gx, gy = ox + 266, oy + 58
-    g_path = f"""
-    <path d="
-      M {gx+38.18},{gy-38.18}
-      A 54,54 0 1,0 {gx+54},{gy+10}
-      L {gx+54},{gy}
-      L {gx+16},{gy}
-      A 7,7 0 0,1 {gx+9},{gy-7}
-      L {gx+9},{gy-9}
-      A 7,7 0 0,1 {gx+16},{gy-16}
-      L {gx+36},{gy-16}
-      A 36,36 0 1,1 {gx+25.45},{gy-25.45}
-      A 9,9 0 0,1 {gx+38.18},{gy-38.18}
-      Z
-    " fill-rule="evenodd" fill="{C_OLIVE}"/>
-    """
+    g_path = ""
+    if include_g:
+        gx, gy = ox + 266, oy + 58
+        g_path = f"""
+        <path d="
+          M {gx+38.18},{gy-38.18}
+          A 54,54 0 1,0 {gx+54},{gy+10}
+          L {gx+54},{gy}
+          L {gx+16},{gy}
+          A 7,7 0 0,1 {gx+9},{gy-7}
+          L {gx+9},{gy-9}
+          A 7,7 0 0,1 {gx+16},{gy-16}
+          L {gx+36},{gy-16}
+          A 36,36 0 1,1 {gx+25.45},{gy-25.45}
+          A 9,9 0 0,1 {gx+38.18},{gy-38.18}
+          Z
+        " fill-rule="evenodd" fill="{C_OLIVE}"/>
+        """
 
     return f"""
     <g id="wordmark">
@@ -52,8 +53,9 @@ def make_wordmark_colored(ox=236, oy=70):
     """
 
 def build_symbol_c_colored():
+    # Only 2 eyes and a smile (no cheek dots!)
     return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title-c-color">
-  <title id="title-c-color">머먹G Concept C - Joyful Bowl and Spoon (Signature Colors)</title>
+  <title id="title-c-color">mumukg Joyful Bowl and Spoon (Signature Colors)</title>
   
   <!-- Dipping Spoon in Sage/Khaki -->
   <g transform="rotate(-30 168 76)">
@@ -61,7 +63,7 @@ def build_symbol_c_colored():
     <ellipse cx="168" cy="90" rx="22" ry="26" fill="{C_SAGE}"/>
   </g>
 
-  <!-- Bowl Body with Smile Cutout in Olive (#4D5B3C) -->
+  <!-- Bowl Body with 2 Eyes and Smile Cutout in Olive (#4D5B3C) -->
   <path fill-rule="evenodd" fill="{C_OLIVE}" d="
     M 32,118
     H 224
@@ -83,10 +85,6 @@ def build_symbol_c_colored():
     Z
   "/>
 
-  <!-- Cheerful Sage Accent Cheeks -->
-  <circle cx="68" cy="154" r="8" fill="{C_SAGE}"/>
-  <circle cx="188" cy="154" r="8" fill="{C_SAGE}"/>
-
   <!-- Bowl Rim in Olive -->
   <rect x="24" y="106" width="208" height="18" rx="9" fill="{C_OLIVE}"/>
 
@@ -95,6 +93,7 @@ def build_symbol_c_colored():
 </svg>"""
 
 def build_symbol_c_app_icon():
+    # Only 2 eyes and a smile (no cheek dots!)
     return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title-app-icon">
   <title id="title-app-icon">mumukg App Icon (Signature Colors)</title>
   <rect width="256" height="256" rx="56" fill="{C_CREAM}"/>
@@ -106,7 +105,7 @@ def build_symbol_c_app_icon():
       <ellipse cx="168" cy="90" rx="22" ry="26" fill="{C_SAGE}"/>
     </g>
 
-    <!-- Bowl Body in Olive -->
+    <!-- Bowl Body in Olive with 2 Eyes and Smile -->
     <path fill-rule="evenodd" fill="{C_OLIVE}" d="
       M 32,118
       H 224
@@ -128,10 +127,6 @@ def build_symbol_c_app_icon():
       Z
     "/>
 
-    <!-- Sage Accent Cheeks -->
-    <circle cx="68" cy="154" r="8" fill="{C_SAGE}"/>
-    <circle cx="188" cy="154" r="8" fill="{C_SAGE}"/>
-
     <!-- Bowl Rim in Olive -->
     <rect x="24" y="106" width="208" height="18" rx="9" fill="{C_OLIVE}"/>
 
@@ -141,8 +136,9 @@ def build_symbol_c_app_icon():
 </svg>"""
 
 def build_symbol_c_reversed():
+    # Only 2 eyes and a smile (no cheek dots!)
     return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title-c-reversed">
-  <title id="title-c-reversed">mumukg Concept C - Reversed (Olive Background)</title>
+  <title id="title-c-reversed">mumukg Reversed Symbol (Olive Background)</title>
   <rect width="256" height="256" rx="56" fill="{C_OLIVE}"/>
 
   <g transform="translate(18, 14) scale(0.86)">
@@ -152,7 +148,7 @@ def build_symbol_c_reversed():
       <ellipse cx="168" cy="90" rx="22" ry="26" fill="{C_SAGE}"/>
     </g>
 
-    <!-- Bowl Body in Cream (#EFE6D4) -->
+    <!-- Bowl Body in Cream (#EFE6D4) with 2 Eyes and Smile Cutout -->
     <path fill-rule="evenodd" fill="{C_CREAM}" d="
       M 32,118
       H 224
@@ -174,10 +170,6 @@ def build_symbol_c_reversed():
       Z
     "/>
 
-    <!-- Sage Accent Cheeks -->
-    <circle cx="68" cy="154" r="8" fill="{C_SAGE}"/>
-    <circle cx="188" cy="154" r="8" fill="{C_SAGE}"/>
-
     <!-- Bowl Rim in Cream -->
     <rect x="24" y="106" width="208" height="18" rx="9" fill="{C_CREAM}"/>
 
@@ -186,8 +178,9 @@ def build_symbol_c_reversed():
   </g>
 </svg>"""
 
-def build_lockup_colored(out_view_w=610):
-    wordmark = make_wordmark_colored(ox=236, oy=70)
+def build_lockup_colored(include_g=False):
+    out_view_w = 610 if include_g else 470
+    wordmark = make_wordmark_colored(ox=236, oy=70, include_g=include_g)
     symbol_body = f"""
     <!-- Spoon in Sage -->
     <g transform="rotate(-30 168 76)">
@@ -195,7 +188,7 @@ def build_lockup_colored(out_view_w=610):
       <ellipse cx="168" cy="90" rx="22" ry="26" fill="{C_SAGE}"/>
     </g>
 
-    <!-- Bowl Body in Olive -->
+    <!-- Bowl Body in Olive (No Cheek Dots) -->
     <path fill-rule="evenodd" fill="{C_OLIVE}" d="
       M 32,118
       H 224
@@ -217,14 +210,13 @@ def build_lockup_colored(out_view_w=610):
       Z
     "/>
 
-    <circle cx="68" cy="154" r="8" fill="{C_SAGE}"/>
-    <circle cx="188" cy="154" r="8" fill="{C_SAGE}"/>
     <rect x="24" y="106" width="208" height="18" rx="9" fill="{C_OLIVE}"/>
     <rect x="96" y="214" width="64" height="10" rx="5" fill="{C_OLIVE}"/>
     """
 
+    title_text = "머먹G Logo Lockup" if include_g else "머먹 Logo Lockup"
     return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {out_view_w} 256" width="{out_view_w}" height="256" role="img">
-  <title>머먹G Logo Lockup (Signature Colors)</title>
+  <title>{title_text}</title>
   <g transform="translate(38, 43) scale(0.6640625)">
     {symbol_body}
   </g>
@@ -233,16 +225,20 @@ def build_lockup_colored(out_view_w=610):
 
 def main():
     os.makedirs("logo-v3/signature", exist_ok=True)
-    with open("logo-v3/signature/symbol-color.svg", "w") as f:
+    with open("logo-v3/signature/symbol-color.svg", "w", encoding="utf-8") as f:
         f.write(build_symbol_c_colored())
-    with open("logo-v3/signature/app-icon.svg", "w") as f:
+    with open("logo-v3/signature/app-icon.svg", "w", encoding="utf-8") as f:
         f.write(build_symbol_c_app_icon())
-    with open("logo-v3/signature/symbol-reversed.svg", "w") as f:
+    with open("logo-v3/signature/symbol-reversed.svg", "w", encoding="utf-8") as f:
         f.write(build_symbol_c_reversed())
-    with open("logo-v3/signature/lockup-color.svg", "w") as f:
-        f.write(build_lockup_colored())
+    # Lockup without G (Primary)
+    with open("logo-v3/signature/lockup-color.svg", "w", encoding="utf-8") as f:
+        f.write(build_lockup_colored(include_g=False))
+    # Lockup with G
+    with open("logo-v3/signature/lockup-color-g.svg", "w", encoding="utf-8") as f:
+        f.write(build_lockup_colored(include_g=True))
 
-    print("Signature colored SVGs regenerated!")
+    print("Signature colored SVGs regenerated without cheek dots!")
 
 if __name__ == "__main__":
     main()

@@ -14,6 +14,12 @@ export function useCurrentLocation() {
       setLoading(false);
       return;
     }
+    // Geolocation은 https 또는 localhost만 허용. LAN IP(http://10.x.x.x)는 브라우저가 차단함.
+    if (typeof window !== 'undefined' && !window.isSecureContext) {
+      setError('현재 주소에서는 위치를 쓸 수 없어요. localhost 또는 https로 접속해 주세요.');
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError('');
     navigator.geolocation.getCurrentPosition(

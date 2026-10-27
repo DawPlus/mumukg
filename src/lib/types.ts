@@ -1,4 +1,6 @@
-export type Restaurant = { id: string; name: string; category: string; latitude: number; longitude: number; note: string; visited: boolean; createdAt: string; placeId?: string; address?: string; phone?: string; placeUrl?: string };
+export type RestaurantVisitFeedback = { date: string; rating: 'satisfied' | 'unsatisfied'; reason: string };
+
+export type Restaurant = { id: string; name: string; category: string; latitude: number; longitude: number; note: string; visited: boolean; visitDates?: string[]; visitFeedback?: RestaurantVisitFeedback[]; createdAt: string; placeId?: string; address?: string; phone?: string; placeUrl?: string; kakaoPlace?: { id: string; place_name: string; category_name: string; category_group_code: string; category_group_name?: string; address_name: string; road_address_name: string; phone: string; place_url: string; distance: string; x: string; y: string } };
 
 export type FoodStory = {
   id: string;

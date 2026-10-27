@@ -2,9 +2,10 @@
 import { usePathname } from 'next/navigation';
 import { PageHeader } from './page-header';
 import { TabNav } from './tab-nav';
+import { ToastProvider } from './ui/toast';
 
 const pages: Record<string, { title: string; description?: string }> = {
-  '/': { title: '근처밥집' },
+  '/': { title: '누가삼?' },
   '/map': { title: '내 맛집 지도' },
   '/decide': { title: '랜덤메뉴', description: '고민될 땐 재미있게 골라보자!' },
   '/delivery': { title: '배달음식', description: '오늘 집에서 뭐 시켜 먹을까?' },
@@ -17,10 +18,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const page = pages[pathname] ?? pages['/'];
 
   return (
+    <ToastProvider>
     <div className="min-h-dvh bg-white">
       <PageHeader title={page.title} description={page.description} className="sticky top-0 z-40 shadow-sm"/>
       {children}
       <TabNav/>
     </div>
+    </ToastProvider>
   );
 }
