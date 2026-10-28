@@ -1,6 +1,8 @@
-export const foodCategories = ['한식', '중식', '일식', '양식', '디저트', '기타'];
+export const foodCategories = ['한식', '중식', '일식', '양식', '디저트', '기타'] as const;
 
-const categoryIcons: Record<string, string> = {
+export type FoodCategory = (typeof foodCategories)[number];
+
+const categoryIcons: Record<FoodCategory, string> = {
   한식: '1f35a',
   중식: '1f95f',
   일식: '1f363',
@@ -8,6 +10,13 @@ const categoryIcons: Record<string, string> = {
   디저트: '1f370',
   기타: '1f437',
 };
+
+export function normalizeFoodCategory(value: unknown): FoodCategory {
+  if (typeof value === 'string' && (foodCategories as readonly string[]).includes(value)) {
+    return value as FoodCategory;
+  }
+  return '기타';
+}
 
 export function getFoodCategory(categoryName: string, groupCode?: string) {
   const path = categoryName.split('>').map((part) => part.trim());
@@ -20,6 +29,10 @@ export function getFoodSubcategory(categoryName: string) {
   return categoryName.split('>').pop()?.trim() ?? categoryName;
 }
 
+export function getCategoryIconCode(category: string) {
+  return categoryIcons[normalizeFoodCategory(category)];
+}
+
 export function getFoodIcon(categoryName: string) {
-  return `/food-icons/${categoryIcons[getFoodCategory(categoryName)]}.svg`;
+  return `/food-icons/${getCategoryIconCode(getFoodCategory(categoryName))}.svg`;
 }

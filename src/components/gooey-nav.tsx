@@ -274,7 +274,7 @@ const bezier = (a: number, b: number, c: number, d: number, t: number) => {
 
 const pillPath = (x: number, y: number, w: number, h: number) => {
   if (w <= 0.5 || h <= 0.5) return '';
-  const r = Math.min(w, h) / 2;
+  const r = Math.min(w / 2, h / 2, 12);
   return `M${x + r},${y}H${x + w - r}A${r},${r} 0 0 1 ${x + w},${y + r}V${y + h - r}A${r},${r} 0 0 1 ${x + w - r},${y + h}H${x + r}A${r},${r} 0 0 1 ${x},${y + h - r}V${y + r}A${r},${r} 0 0 1 ${x + r},${y}Z`;
 };
 
@@ -343,7 +343,7 @@ const GooeyNav = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const overlayRef = useRef<HTMLUListElement>(null);
-  const fallbackRef = useRef<HTMLSpanElement>(null);
+  const backgroundRef = useRef<SVGPathElement>(null);
   const engineRef = useRef<{ go: (index: number) => void; refresh: () => void } | null>(null);
   const indexRef = useRef(current);
   indexRef.current = current;
@@ -378,17 +378,19 @@ const GooeyNav = ({
     const canvas = canvasRef.current;
     const list = listRef.current;
     const overlay = overlayRef.current;
-    const fallback = fallbackRef.current;
-    if (!stage || !canvas || !list || !overlay || !fallback) return;
+    const background = backgroundRef.current;
+    if (!stage || !canvas || !list || !overlay || !background) return;
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: false });
-    const pipeline = gl ? build(gl) : null;
+    let gl: WebGL2RenderingContext | null = null;
+    let pipeline: Pipeline | null = null;
+    try {
+      gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: false });
+      pipeline = gl ? build(gl) : null;
+    } catch (error) {
+      console.warn('[GooeyNav] WebGL initialization failed; using SVG.', error);
+    }
     let contextLost = false;
-    fallback.style.transition = reduced
-      ? 'none'
-      : `transform ${animationTime}ms cubic-bezier(.22, 1, .36, 1), width ${animationTime}ms cubic-bezier(.22, 1, .36, 1), height ${animationTime}ms cubic-bezier(.22, 1, .36, 1)`;
-    fallback.style.display = pipeline ? 'none' : 'block';
     canvas.style.display = pipeline ? 'block' : 'none';
 
     const view = { width: 0, height: 0 };
@@ -438,50 +440,88 @@ const GooeyNav = ({
     };
 
     const trace = (boxes: Box[], blobs: Blob[], smooth: number) => {
-      const field = (x: number, y: number) => {
+      const segments = blobs.map(blob => {
+        const span = blob.tx * blob.tx + blob.ty * blob.ty;
+        return {
+          ...blob,
+          left: Math.min(blob.x, blob.x - blob.tx) - blob.r,
+          right: Math.max(blob.x, blob.x - blob.tx) + blob.r,
+          top: Math.min(blob.y, blob.y - blob.ty) - blob.r,
+          bottom: Math.max(blob.y, blob.y - blob.ty) + blob.r,
+          inverseSpan: span > 0.0001 ? 1 / span : 0,
+        };
+      });
+      const field = (x: number, y: number, rowBoxes: Box[], rowBlobs: typeof segments) => {
         let d = 1e5;
         const merge = (value: number) => {
           const h = clamp01(0.5 + (0.5 * (value - d)) / smooth);
           d = value + (d - value) * h - smooth * h * (1 - h);
         };
-        for (const box of boxes) {
-          const r = Math.min(box.hw, box.hh);
+        for (const box of rowBoxes) {
+          const r = Math.min(box.hw, box.hh, 12);
           const qx = Math.abs(x - box.cx) - box.hw + r;
           const qy = Math.abs(y - box.cy) - box.hh + r;
-          merge(Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r);
+          if (Math.max(qx, qy) - r > d + smooth) continue;
+          const dx = Math.max(qx, 0);
+          const dy = Math.max(qy, 0);
+          merge(Math.sqrt(dx * dx + dy * dy) + Math.min(Math.max(qx, qy), 0) - r);
         }
-        for (const blob of blobs) {
+        for (const blob of rowBlobs) {
+          // Bounding distance can rule out a blend before the exact distance calculation.
+          if (Math.max(blob.left - x, x - blob.right, blob.top - y, y - blob.bottom) > d + smooth) continue;
           const px = x - blob.x;
           const py = y - blob.y;
           const bx = -blob.tx;
           const by = -blob.ty;
-          const span = bx * bx + by * by;
-          const h = span > 0.0001 ? clamp01((px * bx + py * by) / span) : 0;
-          const value = Math.hypot(px - bx * h, py - by * h) - blob.r;
+          const h = clamp01((px * bx + py * by) * blob.inverseSpan);
+          const dx = px - bx * h;
+          const dy = py - by * h;
+          const value = Math.sqrt(dx * dx + dy * dy) - blob.r;
           if (value > d + smooth) continue;
           merge(value);
         }
         return d;
       };
       const step = 2;
+      let minX = view.width;
+      let maxX = 0;
+      for (const box of boxes) {
+        minX = Math.min(minX, box.cx - box.hw);
+        maxX = Math.max(maxX, box.cx + box.hw);
+      }
+      for (const blob of segments) {
+        minX = Math.min(minX, blob.left);
+        maxX = Math.max(maxX, blob.right);
+      }
+      // Include the gooey blend's spread while skipping empty space on either side.
+      const left = Math.max(0, Math.floor((minX - smooth) / step) * step);
+      const right = Math.min(view.width, Math.ceil((maxX + smooth) / step) * step);
       const parts: string[] = [];
-      for (let y = 0; y < view.height; y += 1) {
-        const cy = y + 0.5;
-        let previous = field(0, cy);
-        let start: number | null = previous < 0 ? 0 : null;
-        for (let x = step; x <= view.width + step; x += step) {
-          const value = field(Math.min(x, view.width), cy);
+      for (let y = 0; y < view.height; y += 0.5) {
+        const bottom = Math.min(y + 0.5, view.height);
+        const cy = (y + bottom) / 2;
+        // Shapes farther than the blend radius cannot affect this row's outline.
+        const rowBoxes = boxes.filter(box => Math.abs(cy - box.cy) <= box.hh + smooth);
+        const rowBlobs = segments.filter(blob =>
+          cy >= blob.top - smooth && cy <= blob.bottom + smooth
+        );
+        if (!rowBoxes.length && !rowBlobs.length) continue;
+        let previous = field(left, cy, rowBoxes, rowBlobs);
+        let start: number | null = previous < 0 ? left : null;
+        for (let x = left + step; x < right + step; x += step) {
+          const sampleX = Math.min(x, right);
+          const value = field(sampleX, cy, rowBoxes, rowBlobs);
           if (previous < 0 !== value < 0) {
-            const cross = x - step + (step * previous) / (previous - value);
+            const cross = x - step + ((sampleX - (x - step)) * previous) / (previous - value);
             if (value < 0) start = cross;
             else if (start !== null) {
-              parts.push(`M${start.toFixed(1)},${y}H${cross.toFixed(1)}V${y + 1}H${start.toFixed(1)}Z`);
+              parts.push(`M${start.toFixed(1)},${y}H${cross.toFixed(1)}V${bottom}H${start.toFixed(1)}Z`);
               start = null;
             }
           }
           previous = value;
         }
-        if (start !== null) parts.push(`M${start.toFixed(1)},${y}H${view.width}V${y + 1}H${start.toFixed(1)}Z`);
+        if (start !== null) parts.push(`M${start.toFixed(1)},${y}H${right}V${bottom}H${start.toFixed(1)}Z`);
       }
       return parts.join('');
     };
@@ -589,24 +629,19 @@ const GooeyNav = ({
       }
 
       const settledPill = boxes.length === 1 && !blobs.length;
+      let outline: string;
       if (settledPill) {
         const box = boxes[0];
-        overlay.style.clipPath = `path('${pillPath(box.cx - box.hw, box.cy - box.hh, box.hw * 2, box.hh * 2)}')`;
+        outline = pillPath(box.cx - box.hw, box.cy - box.hh, box.hw * 2, box.hh * 2);
       } else {
-        overlay.style.clipPath = `path('${trace(boxes, blobs, smooth) || 'M0,0Z'}')`;
+        outline = trace(boxes, blobs, smooth) || 'M0,0Z';
       }
+      // Keep the animated fill visible even when a linked WebGL pipeline draws nothing.
+      background.setAttribute('d', outline);
+      overlay.style.clipPath = `path('${outline}')`;
       overlay.style.visibility = 'visible';
 
-      if (!pipeline || !gl || contextLost) {
-        const box = shape(target, 1);
-        if (box) {
-          fallback.style.transform = `translate(${box.x.toFixed(2)}px, ${box.y.toFixed(2)}px)`;
-          fallback.style.width = `${box.w}px`;
-          fallback.style.height = `${box.h}px`;
-        }
-        fallback.style.opacity = box ? '1' : '0';
-        return;
-      }
+      if (!pipeline || !gl || contextLost) return;
 
       let slot = 0;
       for (const box of boxes) {
@@ -659,7 +694,6 @@ const GooeyNav = ({
 
     const onContextLost = () => {
       contextLost = true;
-      fallback.style.display = 'block';
       canvas.style.display = 'none';
       render();
     };
@@ -944,12 +978,10 @@ const GooeyNav = ({
     >
       {frame && <span className={RIM} />}
       <div ref={stageRef} className="relative w-full max-w-full">
+        <svg className="pointer-events-none absolute inset-0 h-full w-full overflow-visible" aria-hidden="true" focusable="false">
+          <path ref={backgroundRef} fill="var(--gn-pill)" />
+        </svg>
         <canvas ref={canvasRef} className="pointer-events-none absolute left-0 top-0" aria-hidden="true" />
-        <span
-          ref={fallbackRef}
-          className="pointer-events-none absolute left-0 top-0 hidden rounded-full bg-[var(--gn-pill)]"
-          aria-hidden="true"
-        />
         <ul ref={listRef} className={LIST}>
           {labels(true)}
         </ul>

@@ -1,5 +1,5 @@
-import { Shell } from '@/components/shell';
+import { redirect } from 'next/navigation';
 
-export default function WhoPaysPage() {
-  return <Shell>{null}</Shell>;
+export default function HomePage() {
+  redirect('/matnaboim');
 }

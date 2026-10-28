@@ -7,18 +7,20 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/toast';
 import { DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { DepthDrawer } from '@/components/ui/depth-drawer';
-import { Zoom } from '@animate-ui/react/primitives/effects/zoom';
+import { Particles, ParticlesEffect } from '@animate-ui/react/primitives/effects/particles';
 import { Input } from '@/components/ui/input';
+import PeekRating from '@/components/ui/peek-rating';
 import { getNearestRestaurants, loadRestaurants, saveRestaurants } from '@/lib/restaurants';
 import type { Restaurant } from '@/lib/types';
 import { useCurrentLocation } from '@/hooks/use-current-location';
-import { foodCategories, getFoodCategory, getFoodIcon, getFoodSubcategory } from '@/lib/food-categories';
-import { List, LocateFixed, Save, X } from 'lucide-react';
+import { getFoodCategory, getFoodIcon } from '@/lib/food-categories';
+import { List, LocateFixed, Phone, Save, Star, X } from 'lucide-react';
 import './map.css';
 
 type KakaoLatLng = { getLat: () => number; getLng: () => number };
 type KakaoBounds = { getSouthWest: () => KakaoLatLng; getNorthEast: () => KakaoLatLng };
 type KakaoMarker = { setMap: (map: KakaoMap | null) => void; setPosition: (position: unknown) => void; setImage: (image: unknown) => void };
+type KakaoCustomOverlay = { setMap: (map: KakaoMap | null) => void };
 type KakaoPlace = NonNullable<Restaurant['kakaoPlace']>;
 type KakaoPagination = { hasNextPage: boolean; nextPage: () => void };
 type KakaoMap = {
@@ -39,6 +41,7 @@ declare global {
         Size: new (width: number, height: number) => unknown;
         MarkerImage: new (src: string, size: unknown, options: object) => unknown;
         Marker: new (options: object) => KakaoMarker;
+        CustomOverlay: new (options: object) => KakaoCustomOverlay;
         event: { addListener: (target: object, event: string, callback: () => void) => void };
         services?: {
           Places: new (map?: KakaoMap) => { categorySearch: (code: string, callback: (results: KakaoPlace[], status: string, pagination: KakaoPagination) => void, options: object) => void };
@@ -50,12 +53,11 @@ declare global {
 }
 
 const key = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
-const categories = foodCategories;
 const longPressMs = 550;
 const markerSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="38" height="44" viewBox="0 0 38 44"><path d="M19 2C9.6 2 2 9.6 2 19c0 11.5 17 23 17 23s17-11.5 17-23C36 9.6 28.4 2 19 2Z" fill="#38432f" opacity=".3"/><path d="M19 1C9.6 1 2 8.6 2 18c0 11.5 17 23 17 23s17-11.5 17-23C36 8.6 28.4 1 19 1Z" fill="#66734b" stroke="#f7f5ef" stroke-width="2.5"/><circle cx="19" cy="18" r="8" fill="#efe6d4" stroke="#f7f5ef" stroke-width="2"/><circle cx="19" cy="18" r="3" fill="#4d5b3c"/></svg>';
 const locationMarkerSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="36" viewBox="0 0 24 36"><g transform="translate(0 4)"><g><animateTransform attributeName="transform" type="translate" values="0 0;0 -4;0 0;0 -2;0 0" keyTimes="0;.22;.5;.72;1" dur="1800ms" repeatCount="indefinite"/><path d="M12 1C6.5 1 2 5.5 2 11c0 7 10 18 10 18s10-11 10-18C22 5.5 17.5 1 12 1Z" fill="#66734b" stroke="#fff" stroke-width="2"/><circle cx="12" cy="11" r="4.5" fill="#efe6d4"/><circle cx="12" cy="11" r="1.8" fill="#4d5b3c"/></g></g></svg>';
 const savedBadgeSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5.5" fill="#efe6d4" stroke="#4d5b3c"/><path d="m6 1.5 1.3 2.7 3 .4-2.2 2.1.5 3L6 8.3l-2.6 1.4.5-3-2.2-2.1 3-.4z" fill="#4d5b3c"/></svg>';
-type MapDrawerPanel = 'list' | 'detail' | 'registration' | 'feedback';
+type MapDrawerPanel = 'list' | 'restaurant';
 
 function makeMarkerImage(maps: NonNullable<Window['kakao']>['maps']) {
   return new maps.MarkerImage(
@@ -90,7 +92,10 @@ export default function MapPage() {
   const [mapCreated, setMapCreated] = useState(false);
   const { location, error: locationError, locate } = useCurrentLocation();
   const [panelStack, setPanelStack] = useState<MapDrawerPanel[]>([]);
+  const [showVisitForm, setShowVisitForm] = useState(false);
   const [visitReason, setVisitReason] = useState('');
+  const [satisfaction, setSatisfaction] = useState<Restaurant['satisfaction']>();
+  const [rating, setRating] = useState(0);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [showParcelAddress, setShowParcelAddress] = useState(false);
   const [placesLoading, setPlacesLoading] = useState(false);
@@ -99,7 +104,7 @@ export default function MapPage() {
   const [placesError, setPlacesError] = useState('');
   const [placeInfo, setPlaceInfo] = useState<Pick<Restaurant, 'placeId' | 'address' | 'phone' | 'placeUrl' | 'kakaoPlace'>>({});
   const [name, setName] = useState('');
-  const [category, setCategory] = useState('한식');
+  const [category, setCategory] = useState('기타');
   const [note, setNote] = useState('');
   const [lat, setLat] = useState(37.5495);
   const [lng, setLng] = useState(126.914);
@@ -110,7 +115,7 @@ export default function MapPage() {
   const locationMarkerRef = useRef<KakaoMarker | null>(null);
   const pendingMarkerRef = useRef<KakaoMarker | null>(null);
   const restaurantMarkersRef = useRef<KakaoMarker[]>([]);
-  const placeSearchMarkersRef = useRef<{ id: string; marker: KakaoMarker }[]>([]);
+  const placeSearchMarkersRef = useRef<{ id: string; marker: KakaoMarker; label: KakaoCustomOverlay }[]>([]);
   const selectedPlaceMarkerRef = useRef<{ marker: KakaoMarker; originalCategory: string } | null>(null);
   const longPressTimer = useRef<number | null>(null);
   const placeSelectionTimer = useRef<number | null>(null);
@@ -129,7 +134,8 @@ export default function MapPage() {
     const showRestaurant = () => {
       setSelectedRestaurant(item);
       setShowParcelAddress(false);
-      openPanel('detail');
+      setShowVisitForm(false);
+      openPanel('restaurant');
     };
     const marker = new maps.Marker({ map, position, title: item.name, image });
     maps.event.addListener(marker, 'click', showRestaurant);
@@ -231,7 +237,10 @@ export default function MapPage() {
     if (longPressTimer.current !== null) window.clearTimeout(longPressTimer.current);
     if (placeSelectionTimer.current !== null) window.clearTimeout(placeSelectionTimer.current);
     placeSearchId.current += 1;
-    placeSearchMarkersRef.current.forEach(({ marker }) => marker.setMap(null));
+    placeSearchMarkersRef.current.forEach(({ marker, label }) => {
+      marker.setMap(null);
+      label.setMap(null);
+    });
   }, []);
 
   function cancelLongPress() {
@@ -248,17 +257,21 @@ export default function MapPage() {
     setLat(latitude);
     setLng(longitude);
     setName('');
-    setCategory('한식');
+    setCategory('기타');
     setNote('');
+    setSatisfaction(undefined);
+    setRating(0);
     setPlaceInfo({});
+    setShowParcelAddress(false);
     setPlacesError('');
     setSelectedRestaurant(null);
+    setShowVisitForm(false);
     setError('');
     if (pendingMarkerRef.current) {
       pendingMarkerRef.current.setPosition(position);
-      pendingMarkerRef.current.setImage(makeFoodMarkerImage(maps, '한식', 22));
-    } else pendingMarkerRef.current = new maps.Marker({ map, position, image: makeFoodMarkerImage(maps, '한식', 22), title: '등록 위치' });
-    openPanel('registration');
+      pendingMarkerRef.current.setImage(makeFoodMarkerImage(maps, '기타', 22));
+    } else pendingMarkerRef.current = new maps.Marker({ map, position, image: makeFoodMarkerImage(maps, '기타', 22), title: '등록 위치' });
+    openPanel('restaurant');
   }
 
   function searchNearbyPlaces() {
@@ -267,7 +280,10 @@ export default function MapPage() {
     const services = maps?.services;
     if (!maps || !map) return;
     const searchId = ++placeSearchId.current;
-    placeSearchMarkersRef.current.forEach(({ marker }) => marker.setMap(null));
+    placeSearchMarkersRef.current.forEach(({ marker, label }) => {
+      marker.setMap(null);
+      label.setMap(null);
+    });
     placeSearchMarkersRef.current = [];
     setPlacesError('');
     if (!services) {
@@ -291,13 +307,22 @@ export default function MapPage() {
           const longitude = Number(place.x);
           if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return [];
           const category = getFoodCategory(place.category_name, place.category_group_code);
-          const image = makeFoodMarkerImage(maps, category, 20);
-          const marker = new maps.Marker({ map, position: new maps.LatLng(latitude, longitude), title: place.place_name, image });
-          maps.event.addListener(marker, 'click', () => {
+          const position = new maps.LatLng(latitude, longitude);
+          const image = makeFoodMarkerImage(maps, category, 22);
+          const marker = new maps.Marker({ map, position, title: place.place_name, image });
+          const labelNode = document.createElement('button');
+          labelNode.type = 'button';
+          labelNode.textContent = place.place_name;
+          labelNode.setAttribute('aria-label', `${place.place_name} 상세 보기`);
+          labelNode.className = 'inline-block max-w-32 -translate-y-1 cursor-pointer truncate whitespace-nowrap rounded-md border border-[#d9d8b8] bg-[#f7f5ef] px-1.5 py-0.5 text-xs font-semibold text-[#38432f] shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4d5b3c]';
+          const label = new maps.CustomOverlay({ map, position, content: labelNode, clickable: true, xAnchor: 0.5, yAnchor: 1.2, zIndex: 1 });
+          const showPlace = () => {
             setSelectedRestaurant(null);
             selectPlace(place, marker);
-          });
-          return [{ id: place.id, marker }];
+          };
+          maps.event.addListener(marker, 'click', showPlace);
+          labelNode.addEventListener('click', showPlace);
+          return [{ id: place.id, marker, label }];
         });
         placeSearchMarkersRef.current.push(...markers);
         if (pagination.hasNextPage) {
@@ -325,11 +350,14 @@ export default function MapPage() {
     const maps = window.kakao?.maps;
     if (placeSelectionTimer.current !== null) window.clearTimeout(placeSelectionTimer.current);
     placeSelectionTimer.current = null;
-    if (selectedPlaceMarker && maps) selectedPlaceMarker.marker.setImage(makeFoodMarkerImage(maps, selectedPlaceMarker.originalCategory, 20));
+    if (selectedPlaceMarker && maps) selectedPlaceMarker.marker.setImage(makeFoodMarkerImage(maps, selectedPlaceMarker.originalCategory, 22));
     selectedPlaceMarkerRef.current = null;
     setPanelStack([]);
     setSelectedRestaurant(null);
+    setShowVisitForm(false);
     setVisitReason('');
+    setSatisfaction(undefined);
+    setRating(0);
     setError('');
     pendingMarkerRef.current?.setMap(null);
     pendingMarkerRef.current = null;
@@ -340,10 +368,22 @@ export default function MapPage() {
     const latitude = Number(place.y);
     const longitude = Number(place.x);
     if (!maps || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+    const savedRestaurant = items.find((item) => item.placeId === place.id);
+    if (savedRestaurant) {
+      setSelectedRestaurant(savedRestaurant);
+      setShowParcelAddress(false);
+      setShowVisitForm(false);
+      openPanel('restaurant');
+      return;
+    }
+    setSelectedRestaurant(null);
     setName(place.place_name);
     const category = getFoodCategory(place.category_name, place.category_group_code);
     setCategory(category);
     setNote('');
+    setSatisfaction(undefined);
+    setRating(0);
+    setShowParcelAddress(false);
     setLat(latitude);
     setLng(longitude);
     setPlaceInfo({
@@ -357,22 +397,16 @@ export default function MapPage() {
     if (placeSelectionTimer.current !== null) window.clearTimeout(placeSelectionTimer.current);
     const previousSelection = selectedPlaceMarkerRef.current;
     if (previousSelection && previousSelection.marker !== marker) {
-      previousSelection.marker.setImage(makeFoodMarkerImage(maps, previousSelection.originalCategory, 20));
+      previousSelection.marker.setImage(makeFoodMarkerImage(maps, previousSelection.originalCategory, 22));
     }
     marker.setImage(makeFoodMarkerImage(maps, category, 18));
     selectedPlaceMarkerRef.current = { marker, originalCategory: category };
     placeSelectionTimer.current = window.setTimeout(() => {
       marker.setImage(makeFoodMarkerImage(maps, category, 22));
-      openPanel('registration');
+      setShowVisitForm(false);
+      openPanel('restaurant');
       placeSelectionTimer.current = null;
     }, 90);
-  }
-
-  function chooseCategory(item: string) {
-    setCategory(item);
-    const maps = window.kakao?.maps;
-    const marker = selectedPlaceMarkerRef.current?.marker ?? pendingMarkerRef.current;
-    if (maps && marker) marker.setImage(makeFoodMarkerImage(maps, item, 22));
   }
 
   function openKakaoMap(restaurant: Restaurant) {
@@ -423,7 +457,7 @@ export default function MapPage() {
       return false;
     }
     const item: Restaurant = {
-      id: crypto.randomUUID(), name: name.trim(), category, note: note.trim(),
+      id: crypto.randomUUID(), name: name.trim(), category, note: note.trim(), satisfaction, rating: rating || undefined,
       latitude: lat, longitude: lng, visited: false, createdAt: new Date().toISOString(),
       ...placeInfo,
     };
@@ -433,6 +467,7 @@ export default function MapPage() {
     if (placeInfo.placeId) {
       const selectedMarker = placeSearchMarkersRef.current.find(({ id }) => id === placeInfo.placeId);
       selectedMarker?.marker.setMap(null);
+      selectedMarker?.label.setMap(null);
       placeSearchMarkersRef.current = placeSearchMarkersRef.current.filter(({ id }) => id !== placeInfo.placeId);
       selectedPlaceMarkerRef.current = null;
     }
@@ -459,6 +494,10 @@ export default function MapPage() {
   const roadAddress = selectedRestaurant?.kakaoPlace?.road_address_name || '';
   const parcelAddress = selectedRestaurant?.kakaoPlace?.address_name || '';
   const currentAddress = showParcelAddress ? parcelAddress : roadAddress || parcelAddress || selectedRestaurant?.address || '';
+  const registrationRoadAddress = placeInfo.kakaoPlace?.road_address_name || '';
+  const registrationParcelAddress = placeInfo.kakaoPlace?.address_name || '';
+  const registrationAddress = showParcelAddress ? registrationParcelAddress : registrationRoadAddress || registrationParcelAddress;
+  const registrationAddressLabel = showParcelAddress ? '지번 주소' : registrationRoadAddress ? '도로명 주소' : '지번 주소';
   const addressLabel = showParcelAddress
     ? '지번 주소'
     : roadAddress
@@ -510,15 +549,8 @@ export default function MapPage() {
 
     <DepthDrawer open={panelDepth > 0} depth={panelDepth} onClose={closeAllPanels}>
       {activePanel && <>
-        <DrawerHeader className={`flex-row shrink-0 items-center justify-between gap-3 border-b border-[#e6e1d1] px-4 py-3 ${activePanel === 'detail' ? 'pt-[calc(env(safe-area-inset-top)+0.5rem)]' : 'pt-[calc(env(safe-area-inset-top)+0.75rem)]'} text-left`}>
-          {activePanel === 'registration' && placeInfo.kakaoPlace ? <DrawerTitle className="flex min-w-0 flex-1 items-center gap-2 text-base font-bold leading-tight text-[#3f4b32]">
-            <Image src={getFoodIcon(category)} width={26} height={26} alt="" aria-hidden="true" className="shrink-0"/>
-            <span className="min-w-0 truncate">{name}</span>
-            <span className="shrink-0 text-xs font-normal text-[#777765]">({placeInfo.kakaoPlace.id})</span>
-          </DrawerTitle> : activePanel === 'detail' && selectedRestaurant ? <DrawerTitle className="flex min-w-0 flex-1 items-center gap-2 text-base font-bold leading-tight text-[#3f4b32]">
-            <span className="min-w-0 truncate">{selectedRestaurant.name}</span>
-            {selectedRestaurant.placeId && <span className="shrink-0 text-xs font-normal text-[#777765]">({selectedRestaurant.placeId})</span>}
-          </DrawerTitle> : <DrawerTitle className="text-lg font-bold leading-tight text-[#3f4b32]">{activePanel === 'list' ? '저장한 맛집' : activePanel === 'registration' ? '맛집 등록' : '방문 평가'}</DrawerTitle>}
+        <DrawerHeader className="flex-row shrink-0 items-center justify-between gap-3 border-b border-[#e6e1d1] px-4 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] text-left">
+          <DrawerTitle className="text-lg font-bold leading-tight text-[#3f4b32]">{activePanel === 'list' ? '저장한 맛집' : '맛집'}</DrawerTitle>
           <Button type="button" variant="ghost" className="size-9 min-h-9 shrink-0 rounded-full !p-0" aria-label="전체 닫기" title="전체 닫기" onClick={closeAllPanels}><X size={17} aria-hidden="true"/></Button>
         </DrawerHeader>
         <div className="map-scrollbar-hidden min-h-0 flex-1 overflow-y-auto px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
@@ -527,28 +559,36 @@ export default function MapPage() {
               const feedback = item.visitFeedback ?? [];
               const score = feedback.length ? Math.round(feedback.filter(({ rating }) => rating === 'satisfied').length / feedback.length * 100) : null;
               const latestFeedback = feedback.at(-1);
+              const currentSatisfaction = item.satisfaction === 'satisfied' ? '🐷 만족' : item.satisfaction === 'unsatisfied' ? '💀 불만족' : null;
               return <li key={item.id}>
-                  <Button type="button" variant="ghost" onClick={() => { setSelectedRestaurant(item); setShowParcelAddress(false); pushPanel('detail'); }} className="!h-auto !min-h-0 !w-full !justify-start !rounded-xl !border !border-[#e6e1d1] !bg-white !px-3 !py-3 text-left !whitespace-normal hover:!bg-[#efe6d4]">
+                  <Button type="button" variant="ghost" onClick={() => { setSelectedRestaurant(item); setShowParcelAddress(false); setShowVisitForm(false); pushPanel('restaurant'); }} className="!h-auto !min-h-0 !w-full !justify-start !rounded-xl !border !border-[#e6e1d1] !bg-white !px-3 !py-3 text-left !whitespace-normal hover:!bg-[#efe6d4]">
                   <Image src={getFoodIcon(item.category)} width={30} height={30} alt="" aria-hidden="true" className="shrink-0" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold text-[#3f4b32]">{item.name}</span>
-                    <span className="mt-0.5 block truncate text-xs text-[#777765]">{item.category}{item.address ? ` · ${item.address}` : ''}</span>
-                    <span className="mt-1 block truncate text-xs text-[#777765]">{score === null ? `방문 ${item.visitDates?.length ?? 0}회` : `만족률 ${score}% · 평가 ${feedback.length}회`}{latestFeedback ? ` · ${latestFeedback.reason}` : ''}</span>
+                    {item.address && <span className="mt-0.5 block truncate text-xs text-[#777765]">{item.address}</span>}
+                    <span className="mt-1 block truncate text-xs text-[#777765]">{currentSatisfaction ?? (score === null ? `방문 ${item.visitDates?.length ?? 0}회` : `만족률 ${score}% · 평가 ${feedback.length}회`)}{item.rating ? ` · ⭐ ${item.rating}/5` : ''}{latestFeedback?.reason ? ` · ${latestFeedback.reason}` : ''}</span>
                   </span>
                 </Button>
               </li>;
             })}
           </ul> : <p className="px-1 py-8 text-center text-sm text-[#777765]">저장한 맛집이 없어요.</p>)}
 
-          {activePanel === 'detail' && selectedRestaurant && <div className="flex min-h-full flex-col">
+          {activePanel === 'restaurant' && selectedRestaurant && <div className="flex min-h-full flex-col">
             <div className="space-y-4 pt-4">
-            <Zoom initialScale={0.8} transition={{ type: 'spring', stiffness: 260, damping: 18 }}>
-              <div className="flex flex-col items-center gap-1">
-                <Image src={getFoodIcon(selectedRestaurant.category)} width={48} height={48} alt="" aria-hidden="true" />
-                <p className="font-medium text-[#4d5b3c]">{selectedRestaurant.category}</p>
+            <div className="flex flex-col items-center gap-2 py-2">
+              <Image src={getFoodIcon(selectedRestaurant.category)} width={112} height={112} alt="" aria-hidden="true" />
+              <h2 className="text-xl font-bold text-[#3f4b32]">{selectedRestaurant.name}</h2>
+            </div>
+            <section className="overflow-hidden rounded-xl border border-[#e6e1d1] bg-white text-sm text-slate-600">
+              <div className="flex items-start justify-between gap-3 p-3">
+                <div className="min-w-0">
+                  <h2 className="text-sm font-semibold text-[#4d5b3c]">가게 정보</h2>
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  {selectedRestaurant.phone && <a href={`tel:${selectedRestaurant.phone}`} aria-label={`전화 걸기 ${selectedRestaurant.phone}`} title="전화 걸기" className="inline-flex size-9 items-center justify-center rounded-lg text-[#4d5b3c] hover:bg-[#efe6d4]"><Phone size={18} aria-hidden="true"/></a>}
+                  <Button type="button" variant="ghost" size="icon" aria-label="카카오맵 상세 정보" title="카카오맵 상세 정보" className="!size-9 !min-h-9 text-[#4d5b3c]" onClick={() => openKakaoMap(selectedRestaurant)}><span aria-hidden="true" className="text-lg">📍</span></Button>
+                </div>
               </div>
-            </Zoom>
-            <section className="overflow-hidden rounded-xl border border-[#e6e1d1] text-sm text-slate-600">
               <dl className="divide-y divide-[#eeeade] border-t border-[#eeeade] text-xs leading-5">
                 <div className="flex items-start justify-between gap-2 p-3">
                   <dt className="sr-only">{addressLabel}</dt>
@@ -570,17 +610,16 @@ export default function MapPage() {
                       }} aria-label="주소 복사" className="!size-10 !min-h-10 !border-0" title="주소 복사">
                         <span aria-hidden="true" className="text-lg">📋</span>
                       </Button>
-                    {selectedRestaurant.phone && <Button asChild variant="ghost" size="icon" className="!size-10 !min-h-10 text-[#4d5b3c]">
-                      <a href={`tel:${selectedRestaurant.phone}`} aria-label="전화 걸기">
-                        <span aria-hidden="true" className="text-lg">📞</span>
-                      </a>
-                    </Button>}
-                    <Button type="button" variant="ghost" size="icon" aria-label="카카오맵 상세 정보" title="카카오맵 상세 정보" className="!size-10 !min-h-10 text-[#4d5b3c]" onClick={() => openKakaoMap(selectedRestaurant)}><span aria-hidden="true" className="text-lg">📍</span></Button>
                   </div>
                   </dd>
                 </div>
               </dl>
             </section>
+            {selectedRestaurant.rating && <section className="space-y-2 rounded-xl border border-[#d9d8b8] bg-white p-4"><h2 className="text-sm font-medium text-[#4d5b3c]">별점</h2><div className="flex items-center gap-1" aria-label={`${selectedRestaurant.rating}점 만점 5점`}>
+              {Array.from({ length: 5 }, (_, index) => <Star key={index} size={22} aria-hidden="true" className={index < selectedRestaurant.rating! ? 'fill-[#e5ad3d] text-[#e5ad3d]' : 'text-[#c9c7b8]'}/>)}
+              <span className="ml-1 text-sm text-[#3f4b32]">{selectedRestaurant.rating}/5</span>
+            </div></section>}
+            {selectedRestaurant.satisfaction && <section className="space-y-2 rounded-xl border border-[#d9d8b8] bg-white p-4"><h2 className="text-sm font-medium text-[#4d5b3c]">내 만족도</h2><p className="text-sm text-[#3f4b32]">{selectedRestaurant.satisfaction === 'satisfied' ? '🐷 만족' : '💀 불만족'}</p></section>}
             <section aria-label="최근 12개월 방문 횟수" className="space-y-2 rounded-xl border border-[#d9d8b8] bg-white p-4">
               <div className="flex items-baseline justify-between"><h2 className="text-sm font-medium text-[#4d5b3c]">방문 기록</h2><p className="text-sm text-slate-600">총 {selectedRestaurant.visitDates?.length ?? 0}회{selectedRestaurant.visitFeedback?.length ? ` · 만족률 ${Math.round(selectedRestaurant.visitFeedback.filter(({ rating }) => rating === 'satisfied').length / selectedRestaurant.visitFeedback.length * 100)}%` : ''}</p></div>
               <svg viewBox="0 0 360 112" className="h-28 w-full overflow-visible" role="img" aria-label={monthlyVisits.map(({ label, count }) => `${label} ${count}회`).join(', ')}>
@@ -596,39 +635,59 @@ export default function MapPage() {
             </section>
             {!!selectedRestaurant.visitFeedback?.length && <section className="space-y-3 border-t border-[#e6e1d1] pt-4"><h2 className="text-sm font-medium text-[#4d5b3c]">방문 평가</h2><ul className="space-y-3">{[...selectedRestaurant.visitFeedback].reverse().map((feedback, index) => <li key={`${feedback.date}-${index}`} className="border-l-2 border-[#d9d8b8] pl-3"><p className="text-xs text-slate-500">{feedback.date} · {feedback.rating === 'satisfied' ? '🐷 만족' : '💀 불만족'}</p><p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">{feedback.reason}</p></li>)}</ul></section>}
             {selectedRestaurant.note && <section className="border-t border-[#e6e1d1] pt-4"><h2 className="mb-2 text-sm font-medium text-[#4d5b3c]">메모</h2><p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">{selectedRestaurant.note}</p></section>}
+            {showVisitForm && <section className="space-y-3 rounded-xl border border-[#d9d8b8] bg-white p-4">
+              <div className="flex items-center justify-between gap-3"><h2 className="text-sm font-medium text-[#4d5b3c]">이번 방문 기록</h2><Button type="button" variant="ghost" size="sm" onClick={() => setShowVisitForm(false)}>닫기</Button></div>
+              <textarea aria-label="방문 이유" value={visitReason} onChange={(event) => setVisitReason(event.target.value)} placeholder="좋았던 점이나 아쉬웠던 점" rows={3} className="w-full resize-y rounded-lg border border-[#d9d8b8] bg-white px-3 py-2 text-base text-[#3f4b32] outline-none focus-visible:ring-2 focus-visible:ring-[#66734b]"/>
+            </section>}
             </div>
             <div className="sticky bottom-0 mt-auto border-t border-[#e6e1d1] bg-[#f7f5ef]/95 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-4">
-              <Button type="button" className="visit-trigger !h-14 !min-h-14 w-full !py-4 text-base !bg-[#66734b] hover:!bg-[#556340]" onClick={() => { setVisitReason(''); pushPanel('feedback'); }}>방문했음</Button>
+              {showVisitForm ? <div className="grid grid-cols-2 gap-3">
+                <Button type="button" disabled={!visitReason.trim()} className="visit-rating-button !h-16 !min-h-16 !flex-col !gap-1 !bg-[#66734b] !text-base !font-semibold text-[#f7f5ef] hover:!bg-[#556340]" onClick={() => recordVisit(selectedRestaurant, 'satisfied')}><span aria-hidden="true" className="text-2xl">🐷</span>만족</Button>
+                <Button type="button" disabled={!visitReason.trim()} className="visit-rating-button !h-16 !min-h-16 !flex-col !gap-1 !bg-[#66734b] !text-base !font-semibold text-[#f7f5ef] hover:!bg-[#556340]" onClick={() => recordVisit(selectedRestaurant, 'unsatisfied')}><span aria-hidden="true" className="text-2xl">💀</span>불만족</Button>
+              </div> : <Button type="button" className="visit-trigger !h-14 !min-h-14 w-full !py-4 text-base !bg-[#66734b] hover:!bg-[#556340]" onClick={() => { setVisitReason(''); setShowVisitForm(true); }}>방문 기록 추가</Button>}
             </div>
           </div>}
 
-          {activePanel === 'registration' && <form className="flex min-h-full flex-col" onSubmit={(event) => { event.preventDefault(); add(); }}>
+          {activePanel === 'restaurant' && !selectedRestaurant && <form className="flex min-h-full flex-col" onSubmit={(event) => { event.preventDefault(); add(); }}>
             <div className="space-y-4 pt-4">
-              <fieldset className="space-y-1.5">
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-6" role="group" aria-label="음식 종류 선택">
-                  {categories.map((item) => <Button key={item} type="button" variant="outline" aria-pressed={category === item} onClick={() => chooseCategory(item)} className={`!h-auto !min-h-14 !w-full !flex-col !gap-1 !rounded-xl !px-1 !py-2 text-[11px] font-medium ${category === item ? '!border-[#4d5b3c] !bg-[#4d5b3c] !text-[#f7f5ef]' : '!border-[#d9d8b8] !bg-[#f7f5ef] !text-[#5d604d] hover:!bg-[#efe6d4]'}`}>
-                    <Image src={getFoodIcon(item)} width={22} height={22} alt="" aria-hidden="true"/>
-                    {item}
-                  </Button>)}
-                </div>
-              </fieldset>
+              <div className="flex justify-center py-1">
+                <Image src={getFoodIcon(category)} width={112} height={112} alt="" aria-hidden="true" className="map-category-icon" />
+              </div>
               {placeInfo.kakaoPlace ? <section className="overflow-hidden rounded-xl border border-[#e6e1d1] bg-white text-sm text-slate-600">
-                <div className="flex items-start justify-between gap-3 p-3">
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-medium text-[#777765]">음식점 카테고리</p>
-                    <p className="mt-1 font-medium text-[#4d5b3c]">{placeInfo.kakaoPlace.category_name ? getFoodSubcategory(placeInfo.kakaoPlace.category_name) : '정보 없음'}</p>
-                    <p className="mt-0.5 text-xs text-[#777765]">{placeInfo.kakaoPlace.category_group_name || '그룹 정보 없음'} · {placeInfo.kakaoPlace.category_group_code || '코드 없음'}</p>
+                <div className="flex items-center justify-between gap-3 p-3">
+                  <span className="min-w-0 flex-1 truncate text-base font-bold text-[#4d5b3c]">{name || placeInfo.kakaoPlace.place_name}</span>
+                  <div className="flex shrink-0 items-center gap-1">
+                    {placeInfo.kakaoPlace.phone && <a href={`tel:${placeInfo.kakaoPlace.phone}`} aria-label={`전화 걸기 ${placeInfo.kakaoPlace.phone}`} title="전화 걸기" className="inline-flex size-9 items-center justify-center rounded-lg text-[#4d5b3c] hover:bg-[#efe6d4]"><Phone size={18} aria-hidden="true"/></a>}
+                    {placeInfo.kakaoPlace.place_url && <a href={placeInfo.kakaoPlace.place_url} target="_blank" rel="noreferrer" aria-label="카카오맵 상세 정보" title="카카오맵 상세 정보" className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-[#4d5b3c] transition-colors hover:bg-[#efe6d4]"><span aria-hidden="true" className="text-lg">📍</span></a>}
                   </div>
-                  {placeInfo.kakaoPlace.place_url && <a href={placeInfo.kakaoPlace.place_url} target="_blank" rel="noreferrer" aria-label="카카오맵 상세 정보" title="카카오맵 상세 정보" className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-[#4d5b3c] transition-colors hover:bg-[#efe6d4]"><span aria-hidden="true" className="text-lg">📍</span></a>}
                 </div>
                 <dl className="divide-y divide-[#eeeade] border-t border-[#eeeade] text-xs leading-5">
-                  <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-2 p-3"><dt className="text-[#777765]">도로명 주소</dt><dd className="break-words">{placeInfo.kakaoPlace.road_address_name || '정보 없음'}</dd></div>
-                  <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-2 p-3"><dt className="text-[#777765]">지번 주소</dt><dd className="break-words">{placeInfo.kakaoPlace.address_name || '정보 없음'}</dd></div>
-                  <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-2 p-3"><dt className="text-[#777765]">전화번호</dt><dd>{placeInfo.kakaoPlace.phone ? <a href={`tel:${placeInfo.kakaoPlace.phone}`} className="underline">{placeInfo.kakaoPlace.phone}</a> : '정보 없음'}</dd></div>
-                  <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-2 p-3"><dt className="text-[#777765]">검색 거리</dt><dd>{placeInfo.kakaoPlace.distance ? `${placeInfo.kakaoPlace.distance}m` : '정보 없음'}</dd></div>
+                  <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-2 p-3">
+                    <dt className="text-sm font-semibold text-[#4d5b3c]">{registrationAddressLabel}</dt>
+                    <dd className="min-w-0 break-words text-sm font-medium text-[#3f4b32]">
+                      {registrationRoadAddress && registrationParcelAddress
+                        ? <Button type="button" variant="ghost" aria-pressed={showParcelAddress} aria-label={`${showParcelAddress ? '지번' : '도로명'} 주소 표시 중. ${showParcelAddress ? '도로명' : '지번'} 주소로 전환`} onClick={() => setShowParcelAddress((current) => !current)} className="!h-auto !min-h-0 !justify-start !rounded-none !p-0 text-left !whitespace-normal !text-sm !font-medium !text-[#3f4b32] hover:!bg-transparent">{registrationAddress}</Button>
+                        : registrationAddress || '정보 없음'}
+                    </dd>
+                  </div>
                 </dl>
               </section> : <Input aria-label="가게 이름" className="h-10" value={name} onChange={(event) => setName(event.target.value)} placeholder="가게 이름"/>}
-              <textarea aria-label="메모" value={note} onChange={(event) => setNote(event.target.value)} placeholder="뭐든써봐" rows={5} className="w-full resize-y rounded-lg border border-[#d9d8b8] bg-white px-3 py-3 text-base text-[#3f4b32] outline-none placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-[#66734b]"/>
+              <textarea aria-label="메모" value={note} onChange={(event) => setNote(event.target.value)} placeholder="쓸말 쓰셈" rows={5} className="w-full resize-y rounded-lg border border-[#d9d8b8] bg-white px-3 py-3 text-base text-[#3f4b32] outline-none placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-[#66734b]"/>
+              <fieldset aria-label="별점" className="flex justify-center">
+                <PeekRating value={rating} onChange={setRating} count={5} size={34} labels={['1점', '2점', '3점', '4점', '5점']} activeColor="#e5ad3d" idleColor="#aaa896" tipColor="#4d5b3c" tipTextColor="#f7f5ef" showTip={false} ariaLabel="별점 선택" />
+              </fieldset>
+              <fieldset aria-label="만족도" className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <Particles animate={satisfaction === 'satisfied'} className="h-full">
+                    <Button type="button" variant="outline" aria-pressed={satisfaction === 'satisfied'} onClick={() => setSatisfaction((current) => current === 'satisfied' ? undefined : 'satisfied')} className={`!h-20 !min-h-20 !w-full !flex-col !gap-1 !text-lg !font-semibold ${satisfaction === 'satisfied' ? '!border-[#4d5b3c] !bg-[#4d5b3c] !text-[#f7f5ef]' : '!border-[#d9d8b8] !bg-white !text-[#4d5b3c]'}`}><span aria-hidden="true" className="text-3xl">🐷</span>만족</Button>
+                    <ParticlesEffect count={7} radius={52} spread={360} className="size-5 bg-contain bg-center bg-no-repeat" style={{ backgroundImage: 'url("/food-icons/1f437.svg")' }} />
+                  </Particles>
+                  <Particles animate={satisfaction === 'unsatisfied'} className="h-full">
+                    <Button type="button" variant="outline" aria-pressed={satisfaction === 'unsatisfied'} onClick={() => setSatisfaction((current) => current === 'unsatisfied' ? undefined : 'unsatisfied')} className={`!h-20 !min-h-20 !w-full !flex-col !gap-1 !text-lg !font-semibold ${satisfaction === 'unsatisfied' ? '!border-[#4d5b3c] !bg-[#4d5b3c] !text-[#f7f5ef]' : '!border-[#d9d8b8] !bg-white !text-[#4d5b3c]'}`}><span aria-hidden="true" className="text-3xl">💀</span>불만족</Button>
+                    <ParticlesEffect count={7} radius={52} spread={360} className="size-6 text-2xl before:content-['💀']" />
+                  </Particles>
+                </div>
+              </fieldset>
               {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
             </div>
             <div className="sticky bottom-0 mt-auto bg-[#f7f5ef]/95 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-4">
@@ -636,16 +695,6 @@ export default function MapPage() {
             </div>
           </form>}
 
-          {activePanel === 'feedback' && selectedRestaurant && <div className="mx-auto flex min-h-full w-full max-w-lg flex-col">
-            <div className="space-y-4 pt-8">
-              <div><h2 className="text-xl font-semibold text-[#3f4b32]">이번 방문은 어땠어?</h2><p className="mt-1 text-sm text-[#777765]">{selectedRestaurant.name} · 이유를 적고 만족도를 골라줘.</p></div>
-              <textarea aria-label="방문 이유" value={visitReason} onChange={(event) => setVisitReason(event.target.value)} placeholder="좋았던 점이나 아쉬웠던 점" rows={4} className="w-full resize-y rounded-lg border border-[#d9d8b8] bg-white px-3 py-2 text-base text-[#3f4b32] outline-none focus-visible:ring-2 focus-visible:ring-[#66734b]"/>
-            </div>
-            <div className="sticky bottom-0 mt-auto grid grid-cols-2 gap-3 bg-[#f7f5ef]/95 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-4">
-              <Button type="button" disabled={!visitReason.trim()} className="visit-rating-button !h-14 !min-h-14 !bg-[#66734b] !py-4 text-[#f7f5ef] hover:!bg-[#556340]" onClick={() => recordVisit(selectedRestaurant, 'satisfied')}><span aria-hidden="true">🐷</span> 만족</Button>
-              <Button type="button" disabled={!visitReason.trim()} className="visit-rating-button !h-14 !min-h-14 !bg-[#66734b] !py-4 text-[#f7f5ef] hover:!bg-[#556340]" onClick={() => recordVisit(selectedRestaurant, 'unsatisfied')}><span aria-hidden="true">💀</span> 불만족</Button>
-            </div>
-          </div>}
         </div>
       </>}
     </DepthDrawer>

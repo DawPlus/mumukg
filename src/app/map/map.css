@@ -8,12 +8,15 @@
 .visit-trigger, .visit-rating-button { transition: transform 180ms ease, box-shadow 180ms ease; }
 .visit-trigger:hover, .visit-rating-button:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 5px 12px rgb(56 67 47 / 18%); }
 .visit-trigger:active, .visit-rating-button:not(:disabled):active { transform: scale(.97); }
+.map-category-icon { animation: map-category-float 3s ease-in-out infinite; }
+@keyframes map-category-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 @keyframes visit-area-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes visit-line-in { to { stroke-dashoffset: 0; } }
 @keyframes visit-point-in { from { opacity: 0; transform: scale(.3); } to { opacity: 1; transform: scale(1); } }
 @keyframes visit-point-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .65; transform: scale(1.65); } }
 @keyframes visit-button-in { from { opacity: 0; transform: translateY(5px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @media (prefers-reduced-motion: reduce) {
+  .map-category-icon { animation: none; }
   .visit-chart-area, .visit-chart-line, .visit-chart-point, .visit-chart-point-current, .visit-trigger { animation: none; opacity: 1; stroke-dashoffset: 0; transform: none; }
   .visit-trigger, .visit-rating-button { transition: none; }
 }

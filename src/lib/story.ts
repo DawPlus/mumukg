@@ -1,7 +1,16 @@
+import {
+  getCategoryIconCode,
+  normalizeFoodCategory,
+} from './food-categories';
 import { suggestIconCode } from './food-icons';
 import type { FoodRank, FoodStory } from './types';
 
 const STORAGE_KEY = 'mumukg.story.v1';
+
+export function storyLabel(item: Pick<FoodStory, 'name' | 'category'>) {
+  const name = item.name.trim();
+  return name || item.category || '기타';
+}
 
 function normalizeStory(item: unknown): FoodStory | null {
   if (!item || typeof item !== 'object') return null;
@@ -34,13 +43,15 @@ function normalizeStory(item: unknown): FoodStory | null {
   ) {
     return null;
   }
+  const category = normalizeFoodCategory(row.category);
   const icon =
     typeof row.icon === 'string' && row.icon.trim()
       ? row.icon.trim()
-      : suggestIconCode(row.name);
+      : getCategoryIconCode(category) || suggestIconCode(row.name);
   return {
     id: row.id,
     name: row.name,
+    category,
     eatenAt: row.eatenAt,
     place: row.place,
     note: row.note,
@@ -91,20 +102,20 @@ export function rankRecentFoods(items: FoodStory[], days = 30): FoodRank[] {
   const map = new Map<string, Acc>();
   for (const item of items) {
     if (item.eatenAt < since) continue;
-    const key = item.name.trim();
-    if (!key) continue;
+    const key = storyLabel(item);
+    const icon =
+      item.icon || getCategoryIconCode(item.category) || suggestIconCode(key);
     const current =
       map.get(key) ??
       ({
         name: key,
         count: 0,
         totalAmount: 0,
-        icon: item.icon || suggestIconCode(key),
+        icon,
         iconVotes: new Map<string, number>(),
       } satisfies Acc);
     current.count += 1;
     if (item.amount != null) current.totalAmount += item.amount;
-    const icon = item.icon || suggestIconCode(key);
     current.iconVotes.set(icon, (current.iconVotes.get(icon) ?? 0) + 1);
     map.set(key, current);
   }

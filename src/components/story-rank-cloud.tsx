@@ -10,13 +10,13 @@ function buildCloudImages(ranks: ReturnType<typeof rankRecentFoods>): string[] {
   const images: string[] = [];
   top.forEach((rank) => {
     const src = foodIconPath(rank.icon);
-    const copies = Math.min(5, Math.max(1, rank.count));
+    const copies = Math.min(4, Math.max(1, rank.count));
     for (let i = 0; i < copies; i++) images.push(src);
   });
   while (images.length > 0 && images.length < 12) {
     images.push(...images.slice(0, Math.min(images.length, 12 - images.length)));
   }
-  return images.slice(0, 28);
+  return images.slice(0, 24);
 }
 
 export function StoryRankCloud({ items }: { items: FoodStory[] }) {
@@ -26,8 +26,15 @@ export function StoryRankCloud({ items }: { items: FoodStory[] }) {
   if (!ranks.length || !images.length) return null;
 
   return (
-    <section className="mb-7 overflow-hidden rounded-[28px] border border-[#d9d8b8] bg-[#f7f1e3] py-3 sm:mb-9">
-      <div className="relative mx-auto flex w-full max-w-[340px] justify-center">
+    <section
+      aria-label="최근 30일 자주 먹은 음식"
+      className="story-taste mb-6"
+    >
+      <div className="story-taste__head">
+        <h2 className="story-taste__title">최근 입맛</h2>
+        <p className="story-taste__sub">지난 30일 · {ranks.length}가지</p>
+      </div>
+      <div className="story-taste__cloud">
         <IconCloud images={images} showControl={false} />
       </div>
     </section>
