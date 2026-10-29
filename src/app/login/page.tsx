@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, useReducedMotion } from 'motion/react';
 import { ArrowRight, MapPin, Utensils } from 'lucide-react';
@@ -8,23 +8,24 @@ import Image from 'next/image';
 import { SplittingText } from '@animate-ui/react/primitives/texts/splitting';
 import { useAuth } from '@/components/auth/auth-provider';
 
-const development = process.env.NODE_ENV === 'development';
 
 export default function LoginPage() {
   const router = useRouter();
   const reduceMotion = useReducedMotion();
-  const { user, loading, available, openSignIn } = useAuth();
+  const { user, loading, available, signInWithKakao } = useAuth();
 
   useEffect(() => {
     if (user) router.replace('/map');
   }, [router, user]);
 
-  const start = () => {
-    if (development) {
-      router.replace('/map');
-      return;
-    }
-    openSignIn();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const start = async () => {
+    if (busy) return;
+    setBusy(true);
+    setError('');
+    const message = await signInWithKakao('/map');
+    if (message) { setError(message); setBusy(false); }
   };
 
   return <main className="grid min-h-dvh bg-[#EFE6D4] px-5 pb-[calc(env(safe-area-inset-bottom)+24px)] pt-[calc(env(safe-area-inset-top)+24px)] text-[#4D5B3C] sm:px-8">
@@ -56,12 +57,12 @@ export default function LoginPage() {
 
       </div>
       <motion.div initial={reduceMotion ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, duration: 0.45 }} className="w-full">
-        <button type="button" disabled={loading || (!development && !available)} onClick={start} className="group flex min-h-14 w-full items-center justify-between rounded-2xl bg-[#4D5B3C] px-5 text-left font-bold text-[#EFE6D4] transition-[transform,background-color] hover:bg-[#3E4C30] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#4D5B3C] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50">
-          <span>{loading ? '로그인 확인 중…' : development ? '로그인하고 시작하기' : '카카오로 로그인하기'}</span>
+        <button type="button" disabled={loading || busy || !available} onClick={() => void start()} className="group flex min-h-14 w-full items-center justify-between rounded-2xl bg-[#4D5B3C] px-5 text-left font-bold text-[#EFE6D4] transition-[transform,background-color] hover:bg-[#3E4C30] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#4D5B3C] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50">
+          <span>{loading ? '로그인 확인 중…' : busy ? '카카오로 이동 중…' : '카카오로 로그인하기'}</span>
           <ArrowRight size={20} aria-hidden="true" className="transition-transform group-hover:translate-x-1 motion-reduce:transform-none" />
         </button>
         <p role="status" className="mt-3 min-h-5 text-center text-xs text-[#4D5B3C]/65">
-          {development ? '개발 모드에서는 인증 없이 바로 시작해.' : available ? '카카오 계정으로 간편하게 로그인해.' : '로그인 설정이 아직 준비되지 않았어.'}
+          {error || (available ? '카카오 계정으로 간편하게 로그인해.' : '로그인 설정이 아직 준비되지 않았어.')}
         </p>
       </motion.div>
     </section>
