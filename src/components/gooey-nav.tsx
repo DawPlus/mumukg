@@ -671,8 +671,9 @@ const GooeyNav = ({
         count += 1;
       }
 
+      const ctx = gl as WebGL2RenderingContext;
       const { program, uniforms, buffer, position } = pipeline;
-      gl.viewport(0, 0, canvas.width, canvas.height);
+      ctx.viewport(0, 0, canvas.width, canvas.height);
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.useProgram(program);
@@ -903,9 +904,11 @@ const GooeyNav = ({
       list.removeEventListener('pointerover', onOver);
       list.removeEventListener('pointerleave', onLeave);
       canvas.removeEventListener('webglcontextlost', onContextLost);
-      if (gl && pipeline) {
-        gl.deleteBuffer(pipeline.buffer);
-        gl.deleteProgram(pipeline.program);
+      const cleanupGl = gl as WebGL2RenderingContext | null;
+      const cleanupPipeline = pipeline as Pipeline | null;
+      if (cleanupGl && cleanupPipeline) {
+        cleanupGl.deleteBuffer(cleanupPipeline.buffer);
+        cleanupGl.deleteProgram(cleanupPipeline.program);
       }
       engineRef.current = null;
     };

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { decideDb, type DecideFoodRow } from '@/lib/decide-db';
 import { Shell } from '@/components/shell';
 import { Plus, X } from 'lucide-react';
 import { DepthDrawer } from '@/components/ui/depth-drawer';
@@ -44,6 +45,12 @@ const pick = <T,>(items: T[]) => items[Math.floor(Math.random() * items.length)]
 
 export default function Decide() {
   const [foods, setFoods] = useState<Food[]>(INITIAL);
+  const [rows, setRows] = useState<DecideFoodRow[]>([]);
+  const [account, setAccount] = useState<string | null>(null);
+  const [member, setMember] = useState(false);
+  const [email, setEmail] = useState('');
+  const [syncError, setSyncError] = useState('');
+  const [syncBusy, setSyncBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [mode, setMode] = useState<Mode>('kuji');
   const [choice, setChoice] = useState('');
@@ -78,8 +85,86 @@ export default function Decide() {
   }, []);
 
   useEffect(() => {
-    if (loaded) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(foods));
-  }, [foods, loaded]);
+    if (loaded && !member) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(foods));
+  }, [foods, loaded, member]);
+
+  useEffect(() => {
+    const db = decideDb;
+    if (!db) return;
+    const boot = async () => {
+      const { data } = await db.auth.getUser();
+      setAccount(data.user?.id ?? null);
+    };
+    void boot();
+    const { data: listener } = db.auth.onAuthStateChange((_event, session) => {
+      setAccount(session?.user.id ?? null);
+    });
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const db = decideDb;
+    if (!db || !account) return;
+    let disposed = false;
+    const load = async () => {
+      const { data: membership, error: membershipError } = await db.from('decide_members')
+        .select('user_id').eq('user_id', account).maybeSingle();
+      if (disposed) return;
+      if (membershipError) { setSyncError(membershipError.message); return; }
+      if (!membership) { setMember(false); return; }
+      const { data, error } = await db.from('decide_foods')
+        .select('id,name,moods,created_at').order('created_at', { ascending: true });
+      if (disposed) return;
+      if (error) { setSyncError(error.message); return; }
+      setRows((data ?? []) as DecideFoodRow[]);
+      setFoods((data ?? []).map(({ name, moods }) => ({ name, moods: moods as Mood[] })));
+      setMember(true);
+      setSyncError('');
+    };
+    void load();
+    return () => { disposed = true; };
+  }, [account]);
+
+  const reloadFoods = async () => {
+    if (!decideDb) return;
+    const { data, error } = await decideDb.from('decide_foods')
+      .select('id,name,moods,created_at').order('created_at', { ascending: true });
+    if (error) { setSyncError(error.message); return; }
+    setRows((data ?? []) as DecideFoodRow[]);
+    setFoods((data ?? []).map(({ name, moods }) => ({ name, moods: moods as Mood[] })));
+    setSyncError('');
+  };
+  const requestSignIn = async () => {
+    if (!decideDb || !email.trim()) return;
+    setSyncBusy(true);
+    const { error } = await decideDb.auth.signInWithOtp({
+      email: email.trim(),
+      options: { emailRedirectTo: window.location.origin + '/decide' }
+    });
+    setSyncBusy(false);
+    setSyncError(error ? error.message : '로그인 링크를 이메일로 보냈어. 메일함을 확인해 줘.');
+  };
+  const importLocalFoods = async () => {
+    if (!decideDb || !member) return;
+    setSyncBusy(true);
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const parsed: unknown = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(parsed)) throw new Error('로컬 후보 데이터를 읽을 수 없어.');
+      const names = new Set(rows.map((row) => row.name.toLocaleLowerCase()));
+      const toImport = (parsed as Food[]).filter((food) =>
+        typeof food.name === 'string' && food.name.trim().length <= 30 &&
+        !names.has(food.name.trim().toLocaleLowerCase())
+      ).map((food) => ({ name: food.name.trim(), moods: Array.isArray(food.moods) ? food.moods : [], created_by: account }));
+      if (toImport.length) {
+        const { error } = await decideDb.from('decide_foods').insert(toImport);
+        if (error) throw error;
+      }
+      await reloadFoods();
+      setSyncError(toImport.length ? `로컬 후보 ${toImport.length}개 가져왔어.` : '가져올 새로운 후보가 없어.');
+    } catch (error) { setSyncError(error instanceof Error ? error.message : '가져오기 실패'); }
+    setSyncBusy(false);
+  };
 
   const pool = foods;
   const reset = () => { setChoice(''); setFortune(''); setBattle([]); setBattleStep(0); setTicket(null); setTear(0); setDragging(false); startX.current = null; };
@@ -133,17 +218,26 @@ export default function Decide() {
     if (battleStep === 0) { setBattle((items) => [items[2], items[3], name].filter(Boolean)); setBattleStep(1); }
     else { setBattle((items) => [items[2], name].filter(Boolean)); setBattleStep(2); }
   };
-  const add = (event: React.FormEvent<HTMLFormElement>) => {
+  const add = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const name = draft.trim();
     if (!name || foods.some((food) => food.name.toLocaleLowerCase() === name.toLocaleLowerCase())) return;
-    setFoods((old) => [...old, { name, moods: [] }]);
-    setDraft('');
-    reset();
+    if (!member || !decideDb) { setSyncError('로그인 및 멤버 승인 후 수정할 수 있어.'); return; }
+    setSyncBusy(true);
+    const { error } = await decideDb.from('decide_foods').insert({ name, moods: [], created_by: account });
+    if (error) setSyncError(error.message);
+    else { await reloadFoods(); setDraft(''); reset(); }
+    setSyncBusy(false);
   };
-  const remove = (name: string) => {
-    setFoods((old) => old.filter((food) => food.name !== name));
-    reset();
+  const remove = async (name: string) => {
+    if (!member || !decideDb) return;
+    const row = rows.find((item) => item.name === name);
+    if (!row) return;
+    setSyncBusy(true);
+    const { error } = await decideDb.from('decide_foods').delete().eq('id', row.id);
+    if (error) setSyncError(error.message);
+    else { await reloadFoods(); reset(); }
+    setSyncBusy(false);
   };
 
   const primary = 'min-h-12 rounded-2xl bg-[#4D5B3C] px-5 font-bold text-[#EFE6D4] disabled:cursor-not-allowed disabled:opacity-40';
@@ -156,6 +250,23 @@ export default function Decide() {
         <p className="mt-2 text-sm opacity-75">메뉴는 등록해두고, 결정은 운명에 맡겨봐!</p>
       </header>
 
+      <section className="rounded-2xl border border-[#D9D8B8] bg-white p-4 text-sm">
+        <p className="font-bold">☁️ 공유 메뉴 후보 {member ? '연결됨' : '로그인 필요'}</p>
+        {!decideDb ? <p>Supabase 환경변수 설정이 필요해.</p> :
+          !account ? <form onSubmit={(event) => { event.preventDefault(); void requestSignIn(); }} className="mt-3 flex flex-wrap gap-2">
+            <input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="이메일 주소" aria-label="로그인 이메일" className="min-h-10 min-w-0 flex-1 rounded-lg border px-3"/>
+            <button disabled={syncBusy} className="rounded-lg bg-[#4D5B3C] px-4 text-white">로그인 링크 받기</button>
+          </form> :
+          <div className="mt-2 space-y-2">
+            <p>{member ? '모두가 같은 후보를 사용해.' : '로그인됐어. 멤버 승인 후 공유 후보를 사용할 수 있어.'}</p>
+            <div className="flex flex-wrap gap-2">
+              {member && <><button type="button" onClick={() => void reloadFoods()} className="rounded-lg border px-3 py-2">새로고침</button>
+                <button type="button" disabled={syncBusy} onClick={() => void importLocalFoods()} className="rounded-lg border px-3 py-2">기존 후보 가져오기</button></>}
+              <button type="button" onClick={() => void decideDb?.auth.signOut()} className="rounded-lg border px-3 py-2">로그아웃</button>
+            </div>
+          </div>}
+        {syncError && <p role="status" className="mt-2 break-words text-xs">{syncError}</p>}
+      </section>
       <section aria-label="뽑기 방식" className="grid grid-cols-3 gap-2">
         {MODES.map((item) => <button key={item.id} type="button" aria-pressed={mode === item.id}
           onClick={() => changeMode(item.id)}
@@ -268,12 +379,12 @@ export default function Decide() {
           <form onSubmit={add} className="flex flex-wrap gap-2">
             <input aria-label="추가할 메뉴 이름" maxLength={30} value={draft} onChange={(event) => setDraft(event.target.value)}
               placeholder="예: 부대찌개" className="min-h-12 min-w-0 flex-[1_1_160px] rounded-xl border border-[#D9D8B8] bg-white px-4 text-base outline-offset-2" />
-            <button type="submit" disabled={!draft.trim() || foods.some((food) => food.name.toLocaleLowerCase() === draft.trim().toLocaleLowerCase())} className={primary}>+ 추가</button>
+            <button type="submit" disabled={!member || syncBusy || !draft.trim() || foods.some((food) => food.name.toLocaleLowerCase() === draft.trim().toLocaleLowerCase())} className={primary}>+ 추가</button>
           </form>
           <div className="flex flex-wrap gap-2">
             {foods.map((food) => <span key={food.name} className="inline-flex max-w-full items-center rounded-full bg-[#EFE6D4] pl-3 text-sm font-medium">
               <span className="min-w-0 break-all py-2">{food.name}</span>
-              <button type="button" aria-label={`${food.name} 삭제`} onClick={() => remove(food.name)}
+              <button type="button" disabled={!member || syncBusy} aria-label={`${food.name} 삭제`} onClick={() => void remove(food.name)}
                 className="min-h-10 min-w-10 rounded-full text-lg hover:bg-[#D9D8B8]">×</button>
             </span>)}
             {foods.length === 0 && <p className="text-sm opacity-70">아직 등록된 메뉴가 없어. 첫 메뉴를 추가해줘!</p>}
