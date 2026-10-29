@@ -9,7 +9,7 @@ const pages: Record<string, { title: string; description?: string }> = {
   '/': { title: '맛나보임' },
   '/matnaboim': { title: '맛나보임' },
   '/map': { title: '내 맛집 지도' },
-  '/decide': { title: '랜덤메뉴', description: '고민될 땐 재미있게 골라보자!' },
+  '/decide': { title: '랜덤메뉴' },
   '/delivery': { title: '냉털' },
   '/restaurants': { title: '맛집 목록', description: '지도에 등록한 식당을 모아서 확인해요.' },
   '/story': { title: '먹스토리' },

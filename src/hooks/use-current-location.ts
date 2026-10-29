@@ -8,7 +8,21 @@ export function useCurrentLocation() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const locate = useCallback(() => {
+  const locate = useCallback(async () => {
+    if (window.MumukgNative?.isNative) {
+      setLoading(true);
+      setError('');
+      try {
+        const result = await window.MumukgNative.getCurrentLocation();
+        if (result.granted) setLocation({ latitude: result.latitude, longitude: result.longitude });
+        else setError('현재 위치를 확인할 수 없어요. 위치 권한을 확인해 주세요.');
+      } catch {
+        setError('현재 위치를 확인할 수 없어요. 위치 권한을 확인해 주세요.');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
     if (!navigator.geolocation) {
       setError('이 브라우저에서는 현재 위치를 사용할 수 없어요.');
       setLoading(false);
@@ -36,6 +50,7 @@ export function useCurrentLocation() {
   }, []);
 
   useEffect(() => {
+    if (window.MumukgNative?.isNative) return;
     const id = window.setTimeout(locate, 0);
     return () => window.clearTimeout(id);
   }, [locate]);

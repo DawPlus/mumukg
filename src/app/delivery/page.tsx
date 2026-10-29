@@ -1,9 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { Plus, Trash2, ShoppingBasket, Refrigerator, ChefHat, Minus, Snowflake, Package, Check, X, Bell, ScanBarcode, Camera, Share2 } from 'lucide-react';
+import { Plus, Trash2, ShoppingBasket, Refrigerator, ChefHat, Minus, Snowflake, Package, Check, X, Bell, ScanBarcode, Camera } from 'lucide-react';
 import { Shell } from '@/components/shell';
+import { useAuth } from '@/components/auth/auth-provider';
+import { readFridge, saveFridgeDiff, type FridgeSnapshot } from '@/lib/fridge-db';
+import { DepthDrawer } from '@/components/ui/depth-drawer';
+import { DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 
 type Item = { id:string; name:string; quantity:number; unit?:string; place?:string; expires:string; createdAt:string };
 type Grocery = { id:string; name:string; checked:boolean };
@@ -30,6 +34,7 @@ const recipes = [
   {name:'감자계란국',icon:'🥔',needs:['감자','계란'],extras:['대파','소금']},
 ];
 const colors = { ink:'#4D5B3C', sage:'#D9D8B8' };
+function displayDate(value:string){const d=new Date(value);return Number.isNaN(d.getTime())?'날짜 없음':new Intl.DateTimeFormat('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:'Asia/Seoul'}).format(d);}
 function daysUntil(value:string) { if (!value) return null; const parts=value.split('-').map(Number); const expiry=new Date(parts[0],parts[1]-1,parts[2]); const now=new Date(); now.setHours(0,0,0,0); return Math.round((expiry.getTime()-now.getTime())/86400000); }
 function guessIcon(name:string) { if (/계란|달걀/.test(name))return '🥚';if(/김치/.test(name))return '🥬';if(/우유/.test(name))return '🥛';if(/고기|삼겹|소고기|돼지/.test(name))return '🥩';if(/치즈/.test(name))return '🧀';if(/감자/.test(name))return '🥔';if(/토마토/.test(name))return '🍅';if(/빵/.test(name))return '🍞';if(/생선|참치/.test(name))return '🐟';if(/밥|쌀/.test(name))return '🍚';return '🥗';}
 const card='rounded-2xl border border-[#D9D8B8] bg-[#FBF8F0] p-4';
@@ -37,7 +42,11 @@ const primary='min-h-11 rounded-xl bg-[#4D5B3C] px-4 font-bold text-[#FFFCF2] di
 
 export default function FridgePage(){
   const [data,setData]=useState<FridgeData>(initial);
+  const {user,loading:authLoading}=useAuth();
   const [ready,setReady]=useState(false);
+  const [cloudReady,setCloudReady]=useState(false);
+  const dataRef=useRef<FridgeData>(initial);
+  const syncQueue=useRef<Promise<void>>(Promise.resolve());
   const [tab,setTab]=useState<'inventory'|'shopping'|'recipes'>('inventory');
   const [adding,setAdding]=useState(false);
   const [name,setName]=useState('');
@@ -60,13 +69,6 @@ export default function FridgePage(){
     try{const result=await native.pickImage({source:'camera'});if(!result)return;setPhoto(result.uri);setBridgeStatus('사진을 가져왔어. 재료명은 직접 입력해 줘.');haptic('success');}
     catch{setBridgeStatus('사진을 불러오지 못했어.');haptic('error');}
   }
-  async function shareFridge(){
-    const message='우리 집 냉털 🥬\n'+data.items.map(item=>item.name+' '+item.quantity+(item.unit??'개')).join('\n');
-    try{if(window.MumukgNative?.isNative)await window.MumukgNative.share({title:'냉털',message});
-      else if(navigator.share)await navigator.share({title:'냉털',text:message});
-      else{await navigator.clipboard.writeText(message);setBridgeStatus('재고 목록 복사 완료');}
-    }catch{setBridgeStatus('공유를 완료하지 못했어.');}
-  }
   async function scheduleExpiryAlerts(){
     const native=window.MumukgNative;if(!native?.isNative)return;
     try{
@@ -87,26 +89,54 @@ export default function FridgePage(){
     }catch{setBridgeStatus('알림 예약에 실패했어.');haptic('error');}
   }
   const reduced=useReducedMotion();
-  useEffect(()=>{const id=requestAnimationFrame(()=>{try{const raw=localStorage.getItem(KEY);if(raw){const parsed=JSON.parse(raw) as Partial<FridgeData>;if(Array.isArray(parsed.items)&&Array.isArray(parsed.shopping))setData({items:parsed.items.filter(x=>x&&typeof x.name==='string'&&typeof x.id==='string'),shopping:parsed.shopping.filter(x=>x&&typeof x.name==='string'&&typeof x.id==='string')});}}catch{}setReady(true);});return()=>cancelAnimationFrame(id);},[]);
+  useEffect(()=>{const id=requestAnimationFrame(()=>{try{const raw=localStorage.getItem(KEY);if(raw){const parsed=JSON.parse(raw) as Partial<FridgeData>;if(Array.isArray(parsed.items)&&Array.isArray(parsed.shopping)){const local={items:parsed.items.filter(x=>x&&typeof x.name==='string'&&typeof x.id==='string'),shopping:parsed.shopping.filter(x=>x&&typeof x.name==='string'&&typeof x.id==='string')};dataRef.current=local;setData(local);}}}catch{}setReady(true);});return()=>cancelAnimationFrame(id);},[]);
+  useEffect(()=>{
+    if(!ready||authLoading)return;
+    let cancelled=false;
+    const currentUser=user?.id;
+    if(!currentUser){
+      const id=requestAnimationFrame(()=>{if(!cancelled){setCloudReady(false);dataRef.current=initial;setData(initial);}});
+      return()=>{cancelled=true;cancelAnimationFrame(id);};
+    }
+    const local=dataRef.current;
+    const marker='mumukg.fridge.imported.'+currentUser;
+    void (async()=>{
+      try{
+        let remote=await readFridge(currentUser);
+        if(!localStorage.getItem(marker)&&!localStorage.getItem('mumukg.fridge.legacy_owner')){
+          const merge:FridgeSnapshot={items:[...remote.items,...local.items.filter(item=>!remote.items.some(x=>x.id===item.id))],shopping:[...remote.shopping,...local.shopping.filter(item=>!remote.shopping.some(x=>x.id===item.id))]};
+          await saveFridgeDiff(currentUser,remote,merge);
+          remote=merge;
+          localStorage.setItem(marker,'true');
+          localStorage.setItem('mumukg.fridge.legacy_owner',currentUser);
+        }
+        if(cancelled)return;
+        dataRef.current=remote;setData(remote);setCloudReady(true);setError('');
+      }catch{if(!cancelled){setError('Supabase 재고를 불러오지 못했어. 새로고침 후 다시 시도해 줘.');setCloudReady(false);}}
+    })();
+    return()=>{cancelled=true;};
+  },[ready,authLoading,user?.id]);
   function update(next:FridgeData){
+    if(!user||!cloudReady){setError('로그인 후 재고를 저장할 수 있어.');return;}
     const removed=data.items.filter(item=>!next.items.some(row=>row.id===item.id));
     if(window.MumukgNative?.isNative)for(const item of removed)void window.MumukgNative.cancelNotification('fridge-expiry-'+item.id).catch(()=>undefined);
-    setData(next);try{localStorage.setItem(KEY,JSON.stringify(next));setError('');haptic('selection');}catch{setError('저장 실패. 저장 공간을 확인해 줘.');}
+    const before=dataRef.current;
+    dataRef.current=next;setData(next);
+    syncQueue.current=syncQueue.current.catch(()=>undefined).then(async()=>{
+      try{await saveFridgeDiff(user.id,before,next);haptic('selection');setError('');}
+      catch{setError('Supabase 저장에 실패했어. 데이터를 확인하고 새로고침해 줘.');}
+    });
   }
-  function addItem(e:React.FormEvent){e.preventDefault();const n=name.trim();const q=Number(quantity);if(!n||!Number.isInteger(q)||q<=0){setError('재료와 수량을 확인해 줘.');return;}update({...data,items:[{id:crypto.randomUUID(),name:n,quantity:q,unit:'개',expires,createdAt:new Date().toISOString()},...data.items]});setName('');setQuantity('1');setExpires('');setAdding(false);}
-  function changeQuantity(id:string,change:number){update({...data,items:data.items.map(x=>x.id===id?{...x,quantity:Math.max(0,Math.round((x.quantity+change)*100)/100)}:x).filter(x=>x.quantity>0)});}
-  function addShopping(e:React.FormEvent){e.preventDefault();const n=grocery.trim();if(!n)return;update({...data,shopping:[...data.shopping,{id:crypto.randomUUID(),name:n,checked:false}]});setGrocery('');}
+  function addItem(e:React.FormEvent){e.preventDefault();if(!cloudReady)return;const n=name.trim();const q=Number(quantity);if(!n||!Number.isInteger(q)||q<=0){setError('재료와 수량을 확인해 줘.');return;}update({...data,items:[{id:crypto.randomUUID(),name:n,quantity:q,unit:'개',expires,createdAt:new Date().toISOString()},...data.items]});setName('');setQuantity('1');setExpires('');setAdding(false);}
+  function changeQuantity(id:string,change:number){if(!cloudReady)return;update({...data,items:data.items.map(x=>x.id===id?{...x,quantity:Math.max(0,Math.round((x.quantity+change)*100)/100)}:x).filter(x=>x.quantity>0)});}
+  function addShopping(e:React.FormEvent){e.preventDefault();if(!cloudReady)return;const n=grocery.trim();if(!n)return;update({...data,shopping:[...data.shopping,{id:crypto.randomUUID(),name:n,checked:false}]});setGrocery('');}
   const stats=useMemo(()=>({count:data.items.length,soon:data.items.filter(x=>{const d=daysUntil(x.expires);return d!==null&&d>=0&&d<=3;}).length,expired:data.items.filter(x=>{const d=daysUntil(x.expires);return d!==null&&d<0;}).length}),[data.items]);
   const sorted=useMemo(()=>[...data.items].sort((a,b)=>{const da=daysUntil(a.expires),db=daysUntil(b.expires);return (da??Infinity)-(db??Infinity)}),[data.items]);
   const matching=useMemo(()=>recipes.map(r=>{const owns=(ingredient:string)=>data.items.some(item=>item.quantity>0&&(daysUntil(item.expires)===null||daysUntil(item.expires)!>=0)&&(item.name.trim()===ingredient||item.name.includes(ingredient)));return {...r,have:r.needs.filter(owns),missing:r.needs.filter(x=>!owns(x)),optional:r.extras.filter(x=>!owns(x))};}).sort((a,b)=>a.missing.length-b.missing.length||b.have.length-a.have.length),[data.items]);
   function addMissing(names:string[]){const existing=new Set(data.shopping.map(x=>x.name));const additions=names.filter(x=>!existing.has(x)).map(x=>({id:crypto.randomUUID(),name:x,checked:false}));if(additions.length){update({...data,shopping:[...data.shopping,...additions]});setTab('shopping');}}
   return <Shell tone="editorial"><div className="mx-auto max-w-3xl space-y-4 pb-8 text-[#4D5B3C]">
-    <motion.div initial={reduced?false:{opacity:0,y:18}} animate={{opacity:1,y:0}} className="relative overflow-hidden rounded-3xl bg-[#D9D8B8] p-5 sm:p-7">
-      <div className="relative z-10"><p className="text-xs font-bold tracking-[0.2em] opacity-70">MY LITTLE FRIDGE</p><h2 className="mt-2 text-3xl font-black">냉털 🥬</h2><p className="mt-2 text-sm opacity-75">남은 재료를 알뜰하게, 오늘의 한 끼는 맛있게.</p></div>
-      <motion.div aria-hidden="true" animate={reduced?{}:{rotate:[-5,5,-5]}} transition={{duration:5,repeat:Infinity,ease:'easeInOut'}} className="absolute -right-3 -bottom-4 opacity-25"><Refrigerator size={135} strokeWidth={1}/></motion.div>
-    </motion.div>
+    {user&&!cloudReady&&<p role="status" className="text-sm">냉털 데이터 동기화 중...</p>}
     <div className="flex flex-wrap gap-2">
-      <button type="button" onClick={()=>void shareFridge()} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[#B9B99E] bg-[#FBF8F0] px-4 text-xs font-bold"><Share2 size={15}/>재고 공유</button>
       {nativeAvailable&&<>
         <button type="button" onClick={()=>void scheduleExpiryAlerts()} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[#B9B99E] bg-[#FBF8F0] px-4 text-xs font-bold"><Bell size={15}/>소비기한 알림</button>
         <button type="button" onClick={()=>void scanProduct()} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[#B9B99E] bg-[#FBF8F0] px-4 text-xs font-bold"><ScanBarcode size={15}/>바코드</button>
@@ -122,14 +152,27 @@ export default function FridgePage(){
       {([{id:'inventory',label:'내 냉장고',icon:Refrigerator},{id:'recipes',label:'냉털 요리',icon:ChefHat},{id:'shopping',label:'장보기',icon:ShoppingBasket}] as const).map(t=><button key={t.id} type="button" aria-pressed={tab===t.id} onClick={()=>setTab(t.id)} className={`flex min-h-12 items-center justify-center gap-1.5 rounded-xl px-2 text-xs font-bold sm:text-sm ${tab===t.id?'bg-[#4D5B3C] text-white':'border border-[#D9D8B8] bg-[#FBF8F0]'}`}><t.icon size={16}/>{t.label}</button>)}
     </div>
     {tab==='inventory'&&<section className={card}>
-      <div className="flex items-center justify-between gap-3"><h3 className="text-lg font-bold">재료 목록 <span className="text-sm font-medium opacity-60">{sorted.length}</span></h3><button type="button" className={primary} onClick={()=>setAdding(x=>!x)}><Plus size={16} className="mr-1 inline"/>{adding?'닫기':'재료 추가'}</button></div>
-      {adding&&<form onSubmit={addItem} className="mt-4 space-y-3 rounded-xl bg-[#EFE6D4] p-3"><label className="block text-xs font-bold">재료명<input required maxLength={40} value={name} onChange={e=>setName(e.target.value)} placeholder="예: 계란" className="mt-1 min-h-11 w-full rounded-lg bg-white px-3 text-base"/></label><div className="grid grid-cols-2 gap-2"><label className="text-xs font-bold">수량<input type="number" min="1" step="1" required value={quantity} onChange={e=>setQuantity(e.target.value)} className="mt-1 min-h-11 w-full rounded-lg bg-white px-3 text-base"/></label><label className="text-xs font-bold">소비기한 (선택)<input type="date" value={expires} onChange={e=>setExpires(e.target.value)} className="mt-1 min-h-11 w-full rounded-lg bg-white px-2 text-sm"/></label></div><button type="submit" disabled={!ready} className={primary+' w-full'}>냉장고에 넣기</button></form>}
-      <div className="mt-3 space-y-2">{sorted.map(item=>{const d=daysUntil(item.expires);return <motion.div layout key={item.id} initial={reduced?false:{opacity:0,x:-12}} animate={{opacity:1,x:0}} className="flex items-center gap-3 rounded-xl border border-[#E8E2D4] bg-white p-3"><span className="text-2xl" aria-hidden="true">{guessIcon(item.name)}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{item.name}</p><p className="text-xs opacity-60">{d===null?'기한 미설정':d<0?`${Math.abs(d)}일 경과`:d===0?'오늘까지':`D-${d}`}</p></div><div className="flex items-center gap-1"><button type="button" aria-label={item.name+' 수량 줄이기'} onClick={()=>changeQuantity(item.id,-1)} className="flex size-9 items-center justify-center rounded-lg bg-[#F1EDE3]"><Minus size={15}/></button><span className="min-w-9 text-center text-xs font-bold">{item.quantity}{item.unit??'개'}</span><button type="button" aria-label={item.name+' 수량 늘리기'} onClick={()=>changeQuantity(item.id,1)} className="flex size-9 items-center justify-center rounded-lg bg-[#F1EDE3]"><Plus size={15}/></button><button type="button" aria-label={item.name+' 삭제'} onClick={()=>update({...data,items:data.items.filter(x=>x.id!==item.id)})} className="ml-1 flex size-9 items-center justify-center text-[#A64F48]"><Trash2 size={16}/></button></div></motion.div>})}</div>
+      <div className="flex items-center justify-between gap-3"><h3 className="text-lg font-bold">재료 목록 <span className="text-sm font-medium opacity-60">{sorted.length}</span></h3><button type="button" disabled={!cloudReady} className={primary} onClick={()=>setAdding(true)}><Plus size={16} className="mr-1 inline"/>재료 추가</button></div>
+      <div className="mt-3 space-y-2">{sorted.map(item=>{const d=daysUntil(item.expires);return <motion.div layout key={item.id} initial={reduced?false:{opacity:0,x:-12}} animate={{opacity:1,x:0}} className="flex items-center gap-3 rounded-xl border border-[#E8E2D4] bg-white p-3"><span className="text-2xl" aria-hidden="true">{guessIcon(item.name)}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{item.name}</p><p className="text-xs opacity-60">등록일 {displayDate(item.createdAt)}</p>{d!==null&&<p className={`text-xs ${d<0?'text-red-600':d<=3?'text-amber-700':'opacity-60'}`}>소비기한 {displayDate(item.expires)} · {d<0?`${Math.abs(d)}일 경과`:d===0?'오늘까지':`D-${d}`}</p>}</div><div className="flex items-center gap-1"><button type="button" aria-label={item.name+' 수량 줄이기'} onClick={()=>changeQuantity(item.id,-1)} className="flex size-9 items-center justify-center rounded-lg bg-[#F1EDE3]"><Minus size={15}/></button><span className="min-w-9 text-center text-xs font-bold">{item.quantity}{item.unit??'개'}</span><button type="button" aria-label={item.name+' 수량 늘리기'} onClick={()=>changeQuantity(item.id,1)} className="flex size-9 items-center justify-center rounded-lg bg-[#F1EDE3]"><Plus size={15}/></button><button type="button" aria-label={item.name+' 삭제'} onClick={()=>update({...data,items:data.items.filter(x=>x.id!==item.id)})} className="ml-1 flex size-9 items-center justify-center text-[#A64F48]"><Trash2 size={16}/></button></div></motion.div>})}</div>
       {!sorted.length&&<div className="py-10 text-center"><Snowflake className="mx-auto mb-3 opacity-40" size={35}/><p className="text-sm opacity-65">아직 재료가 없어. 냉장고를 채워볼까?</p></div>}
     </section>}
     {tab==='recipes'&&<section className={card}><h3 className="text-lg font-bold">냉털 요리 🍳</h3><p className="mt-1 text-xs opacity-65">미리 준비한 메뉴에서 재료를 비교해. 양념도 필요한 재료로 확인해 줘.</p><div className="mt-4 space-y-2">{matching.filter(r=>r.have.length>0).map(r=><div key={r.name} className="flex items-start gap-3 rounded-xl bg-white p-3"><span className="text-3xl">{r.icon}</span><div className="min-w-0 flex-1"><p className="text-sm font-bold">{r.name}</p><p className="mt-1 text-xs text-[#73825C]">있는 재료: {r.have.join(', ')}</p><p className="mt-1 text-xs opacity-75">{r.missing.length===0?'필수 재료 준비 완료':`필수 재료 부족: ${r.missing.join(', ')}`}</p>{r.optional.length>0&&<p className="mt-1 text-xs opacity-60">있으면 좋은 재료: {r.optional.join(', ')}</p>}{r.missing.length>0&&<button type="button" onClick={()=>addMissing(r.missing)} className="mt-2 rounded-lg bg-[#D9D8B8] px-3 py-2 text-xs font-semibold">부족한 재료 장보기 추가</button>}</div><span className={`shrink-0 rounded-full px-2 py-1 text-xs font-bold ${!r.missing.length?'bg-[#D9D8B8]':'bg-[#EFE6D4]'}`}>{r.have.length}/{r.needs.length}</span></div>)}{!matching.some(r=>r.have.length>0)&&<p className="py-8 text-center text-sm opacity-65">재료를 추가하면 어울리는 메뉴가 나타나!</p>}</div></section>}
     {tab==='shopping'&&<section className={card}><h3 className="text-lg font-bold">장보기 목록 🛒</h3><form onSubmit={addShopping} className="mt-3 flex gap-2"><input value={grocery} onChange={e=>setGrocery(e.target.value)} maxLength={40} aria-label="장볼 재료" placeholder="무엇을 사야 할까?" className="min-h-11 min-w-0 flex-1 rounded-xl border border-[#D9D8B8] bg-white px-3 text-base"/><button className={primary} disabled={!grocery.trim()}><Plus size={18}/></button></form><div className="mt-3 space-y-2">{data.shopping.map(item=><div key={item.id} className="flex items-center gap-2 rounded-xl bg-white p-2"><button aria-label={item.name+' 체크'} aria-pressed={item.checked} onClick={()=>update({...data,shopping:data.shopping.map(x=>x.id===item.id?{...x,checked:!x.checked}:x)})} className="flex size-10 items-center justify-center">{item.checked?<Check size={20}/>:<span className="size-5 rounded border border-[#A6AA8F]"/>}</button><span className={`min-w-0 flex-1 text-sm font-medium ${item.checked?'line-through opacity-50':''}`}>{item.name}</span><button type="button" title="구매 후 재고 등록" aria-label={item.name+' 냉장고로 옮기기'} onClick={()=>{setName(item.name);setAdding(true);setTab('inventory');update({...data,shopping:data.shopping.filter(x=>x.id!==item.id)});}} className="flex size-10 items-center justify-center"><Package size={18}/></button><button aria-label={item.name+' 삭제'} onClick={()=>update({...data,shopping:data.shopping.filter(x=>x.id!==item.id)})} className="flex size-10 items-center justify-center"><X size={17}/></button></div>)}{!data.shopping.length&&<p className="py-8 text-center text-sm opacity-65">장볼 재료를 추가해 봐.</p>}</div></section>}
-    {error&&<p role="alert" className="text-sm text-red-700">{error}</p>}
-    <p className="px-1 text-center text-xs opacity-55">초안 · 이 브라우저에 저장돼요. 다른 기기와의 동기화는 추후 지원 예정.</p>
+    <DepthDrawer open={adding} depth={1} onClose={()=>setAdding(false)}>
+      <DrawerHeader className="flex-row items-center justify-between border-b border-[#D9D8B8] px-5 py-4 text-left">
+        <DrawerTitle className="text-lg font-bold text-[#4D5B3C]">재료 추가</DrawerTitle>
+        <button type="button" aria-label="닫기" onClick={()=>setAdding(false)} className="flex size-11 items-center justify-center rounded-xl bg-[#EFE6D4] text-[#4D5B3C]"><X size={20}/></button>
+      </DrawerHeader>
+      <form onSubmit={addItem} className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-5 text-[#4D5B3C]">
+        <div className="space-y-5">
+          <label className="block text-sm font-bold">재료명<input autoFocus required maxLength={40} value={name} onChange={e=>setName(e.target.value)} placeholder="예: 계란" className="mt-2 min-h-12 w-full rounded-xl border border-[#D9D8B8] bg-white px-3 text-base"/></label>
+          <label className="block text-sm font-bold">수량<input type="number" min="1" step="1" required value={quantity} onChange={e=>setQuantity(e.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-[#D9D8B8] bg-white px-3 text-base"/></label>
+          <label className="block text-sm font-bold">소비기한 <span className="font-normal opacity-60">(선택)</span><input type="date" value={expires} onChange={e=>setExpires(e.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-[#D9D8B8] bg-white px-3 text-base"/></label>
+        </div>
+        {error&&<p role="alert" className="mt-3 text-sm text-red-700">{error}</p>}
+        <div className="mt-auto pt-6 pb-[calc(env(safe-area-inset-bottom)+12px)]"><button type="submit" disabled={!cloudReady} className={primary+' w-full'}>냉장고에 넣기</button></div>
+      </form>
+    </DepthDrawer>
+    {error&&!adding&&<p role="alert" className="text-sm text-red-700">{error}</p>}
   </div></Shell>;
 }

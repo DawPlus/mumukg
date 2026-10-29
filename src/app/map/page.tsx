@@ -9,9 +9,12 @@ import { loadRestaurants, saveRestaurants } from '@/lib/restaurants';
 import type { Restaurant } from '@/lib/types';
 import { useCurrentLocation } from '@/hooks/use-current-location';
 import { getFoodCategory, getFoodIcon } from '@/lib/food-categories';
-import { List, LocateFixed, Star, X } from 'lucide-react';
+import { List, LocateFixed, X } from 'lucide-react';
 import { MapNotebook, panelTitles, type MapPanel } from './map-notebook';
-import { findRestaurants, getVisits, type MapRestaurant, type MapVisit, type RestaurantFilter } from './restaurant-memory';
+import { findRestaurants, getRestaurantMarker, type MapRestaurant, type MapVisit, type RestaurantFilter } from './restaurant-memory';
+import { deleteMapVisit, importLocalMap, isMapMemberRequired, loadSharedMap, saveMapRecord, type MapImportResult, type MapRecordSaveOptions } from '@/lib/map-db';
+import { resolveSavedMapRestaurant } from '@/lib/map-import';
+import { useAuth } from '@/components/auth/auth-provider';
 import './map.css';
 
 type KakaoLatLng = { getLat: () => number; getLng: () => number };
@@ -53,8 +56,18 @@ const key = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
 const longPressMs = 550;
 const markerSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="38" height="44" viewBox="0 0 38 44"><path d="M19 2C9.6 2 2 9.6 2 19c0 11.5 17 23 17 23s17-11.5 17-23C36 9.6 28.4 2 19 2Z" fill="#38432f" opacity=".3"/><path d="M19 1C9.6 1 2 8.6 2 18c0 11.5 17 23 17 23s17-11.5 17-23C36 8.6 28.4 1 19 1Z" fill="#66734b" stroke="#f7f5ef" stroke-width="2.5"/><circle cx="19" cy="18" r="8" fill="#efe6d4" stroke="#f7f5ef" stroke-width="2"/><circle cx="19" cy="18" r="3" fill="#4d5b3c"/></svg>';
 const locationMarkerSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="36" viewBox="0 0 24 36"><g transform="translate(0 4)"><g><animateTransform attributeName="transform" type="translate" values="0 0;0 -4;0 0;0 -2;0 0" keyTimes="0;.22;.5;.72;1" dur="1800ms" repeatCount="indefinite"/><path d="M12 1C6.5 1 2 5.5 2 11c0 7 10 18 10 18s10-11 10-18C22 5.5 17.5 1 12 1Z" fill="#66734b" stroke="#fff" stroke-width="2"/><circle cx="12" cy="11" r="4.5" fill="#efe6d4"/><circle cx="12" cy="11" r="1.8" fill="#4d5b3c"/></g></g></svg>';
-const savedBadgeSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5.5" fill="#efe6d4" stroke="#4d5b3c"/><path d="m6 1.5 1.3 2.7 3 .4-2.2 2.1.5 3L6 8.3l-2.6 1.4.5-3-2.2-2.1 3-.4z" fill="#4d5b3c"/></svg>';
-const wishBadgeSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="5" fill="#f7f5ef" stroke="#4d5b3c" stroke-width="2"/></svg>';
+const savedMarkerSvgs = {
+  heart: '<svg xmlns="http://www.w3.org/2000/svg" width="34" height="42" viewBox="0 0 34 42"><path d="M17 40S2 27 2 17a15 15 0 0 1 30 0c0 10-15 23-15 23Z" fill="#B4534B" stroke="#fff" stroke-width="2.5"/><path d="M17 25 9.5 18a5 5 0 0 1 7.5-6 5 5 0 0 1 7.5 6Z" fill="#fff4ef"/></svg>',
+  memo: '<svg xmlns="http://www.w3.org/2000/svg" width="34" height="42" viewBox="0 0 34 42"><path d="M17 40S2 27 2 17a15 15 0 0 1 30 0c0 10-15 23-15 23Z" fill="#A47536" stroke="#fff" stroke-width="2.5"/><rect x="10" y="9" width="14" height="17" rx="2" fill="#fff8e9"/><path d="M13 14h8m-8 4h8m-8 4h5" stroke="#A47536" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  visited: '<svg xmlns="http://www.w3.org/2000/svg" width="34" height="42" viewBox="0 0 34 42"><path d="M17 40S2 27 2 17a15 15 0 0 1 30 0c0 10-15 23-15 23Z" fill="#368564" stroke="#fff" stroke-width="2.5"/><circle cx="17" cy="17" r="9" fill="#e5f5eb"/><path d="m12.5 17 3 3 6-6" fill="none" stroke="#287050" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
+const savedMarkerUrl = (kind: keyof typeof savedMarkerSvgs) => `data:image/svg+xml;charset=utf-8,${encodeURIComponent(savedMarkerSvgs[kind])}`;
+
+function makeSavedMarkerImage(maps: NonNullable<Window['kakao']>['maps'], kind: keyof typeof savedMarkerSvgs) {
+  return new maps.MarkerImage(savedMarkerUrl(kind), new maps.Size(30.6, 37.8), {
+    offset: new maps.Point(15.3, 36), alt: kind === 'heart' ? '하트 저장' : kind === 'visited' ? '다녀온 곳' : '가게 기억',
+  });
+}
 
 function makeMarkerImage(maps: NonNullable<Window['kakao']>['maps']) {
   return new maps.MarkerImage(
@@ -74,15 +87,29 @@ function makeFoodMarkerImage(maps: NonNullable<Window['kakao']>['maps'], categor
 export default function MapPage() {
   const pathname = usePathname();
   const [items, setItems] = useState<MapRestaurant[]>([]);
+  const [localItems, setLocalItems] = useState<MapRestaurant[]>([]);
   const [itemsLoaded, setItemsLoaded] = useState(false);
+  const [sharedUserId, setSharedUserId] = useState<string | null>(null);
+  const [sharedErrorState, setSharedErrorState] = useState<{ userId: string; message: string } | null>(null);
+  const [memberRequiredUserId, setMemberRequiredUserId] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importStatus, setImportStatus] = useState('');
+  const [localItemCount, setLocalItemCount] = useState(0);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<RestaurantFilter>('all');
   const [ready, setReady] = useState(false);
   const [mapError, setMapError] = useState('');
   const [mapCreated, setMapCreated] = useState(false);
   const { location, error: locationError, locate } = useCurrentLocation();
+  const { user, profileReady, loading: authLoading, available: authAvailable } = useAuth();
+  const sharedMode = Boolean(user && authAvailable && sharedUserId === user.id);
+  const sharedError = sharedErrorState && sharedErrorState.userId === user?.id ? sharedErrorState.message : '';
+  const memberRequired = memberRequiredUserId === user?.id && !!user;
+  const displayItems = sharedMode ? items : localItems;
+  const localItemsRef = useRef<MapRestaurant[]>([]);
   const [panelStack, setPanelStack] = useState<MapPanel[]>([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState<MapRestaurant | null>(null);
+  const displayRestaurant = selectedRestaurant ? displayItems.find(item => item.id === selectedRestaurant.id) ?? null : null;
   const [visitToEdit, setVisitToEdit] = useState<MapVisit | null>(null);
   const [placesLoading, setPlacesLoading] = useState(false);
   const [canSearchPlaces, setCanSearchPlaces] = useState(true);
@@ -115,11 +142,43 @@ export default function MapPage() {
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
-      setItems(loadRestaurants());
+      const localItems = loadRestaurants() as MapRestaurant[];
+      localItemsRef.current = localItems;
+      setLocalItems(localItems);
+      setLocalItemCount(localItems.length);
+      setItems(localItems);
       setItemsLoaded(true);
     });
     return () => cancelAnimationFrame(frame);
   }, []);
+
+  useEffect(() => {
+    if (!itemsLoaded || !profileReady || authLoading) return;
+    let active = true;
+    if (!user || !authAvailable) {
+      const frame = requestAnimationFrame(() => setItems(localItemsRef.current));
+      return () => { active = false; cancelAnimationFrame(frame); };
+    }
+    void loadSharedMap().then(sharedItems => {
+      if (!active) return;
+      setItems(sharedItems);
+      setSharedUserId(user.id);
+      setMemberRequiredUserId(null);
+      setSharedErrorState(null);
+    }).catch(error => {
+      if (!active) return;
+      setItems(localItemsRef.current);
+      setSharedUserId(null);
+      if (isMapMemberRequired(error)) {
+        setMemberRequiredUserId(user.id);
+        setSharedErrorState(null);
+      } else {
+        setMemberRequiredUserId(null);
+        setSharedErrorState({ userId: user.id, message: '공유 기록을 불러오지 못했어요. 현재 기기에 저장된 기록을 보여드려요.' });
+      }
+    });
+    return () => { active = false; };
+  }, [itemsLoaded, profileReady, authLoading, user, authAvailable]);
 
   useEffect(() => {
     const maps = window.kakao?.maps;
@@ -155,9 +214,9 @@ export default function MapPage() {
     const maps = window.kakao?.maps;
     const map = mapRef.current;
     if (!mapCreated || !maps || !map) return;
-    const center = location ?? (items[0] && { latitude: items[0].latitude, longitude: items[0].longitude });
+    const center = location ?? (displayItems[0] && { latitude: displayItems[0].latitude, longitude: displayItems[0].longitude });
     if (center) map.setCenter(new maps.LatLng(center.latitude, center.longitude));
-  }, [items, mapCreated, location]);
+  }, [displayItems, mapCreated, location]);
 
   useEffect(() => {
     const maps = window.kakao?.maps;
@@ -185,31 +244,26 @@ export default function MapPage() {
     function addRestaurantMarker(maps: NonNullable<Window['kakao']>['maps'], map: KakaoMap, item: MapRestaurant): KakaoMarker[] {
       if (!Number.isFinite(item.latitude) || !Number.isFinite(item.longitude) || Math.abs(item.latitude) > 90 || Math.abs(item.longitude) > 180) return [];
       const position = new maps.LatLng(item.latitude, item.longitude);
-      const image = makeFoodMarkerImage(maps, item.category, 20);
+      const kind = getRestaurantMarker(item);
+      if (!kind) return [];
+      const image = makeSavedMarkerImage(maps, kind);
       const showRestaurant = () => {
         setSelectedRestaurant(item);
 
         setPanelStack(['restaurant']);
       };
-      const marker = new maps.Marker({ map, position, title: item.name, image });
+      const marker = new maps.Marker({ map, position, title: `${item.name} · ${kind === 'heart' ? '하트 저장' : kind === 'visited' ? '다녀온 곳' : '가게 기억'}`, image, zIndex: 2 });
       maps.event.addListener(marker, 'click', showRestaurant);
-      const badgeImage = new maps.MarkerImage(
-        `data:image/svg+xml;charset=utf-8,${encodeURIComponent(getVisits(item).length ? savedBadgeSvg : wishBadgeSvg)}`,
-        new maps.Size(12, 12),
-        { offset: new maps.Point(1, 19), alt: getVisits(item).length ? '다녀온 곳' : '가보고 싶은 곳' },
-      );
-      const badge = new maps.Marker({ map, position, title: `${item.name} · ${getVisits(item).length ? '다녀온 곳' : '가보고 싶은 곳'}`, image: badgeImage, zIndex: 1 });
-      maps.event.addListener(badge, 'click', showRestaurant);
-      return [marker, badge];
+      return [marker];
     }
 
-    const restaurants = findRestaurants(items, query, filter);
+    const restaurants = findRestaurants(displayItems, query, filter);
     restaurantMarkersRef.current = restaurants.flatMap((restaurant) => addRestaurantMarker(maps, map, restaurant));
     return () => {
       restaurantMarkersRef.current.forEach((marker) => marker.setMap(null));
       restaurantMarkersRef.current = [];
     };
-  }, [items, query, filter, mapCreated]);
+  }, [displayItems, query, filter, mapCreated]);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => mapRef.current?.relayout());
@@ -283,7 +337,7 @@ export default function MapPage() {
       if (searchId !== placeSearchId.current) return;
       if (status === services.Status.OK) {
         const markers = results.flatMap((place) => {
-          if (items.some(item => item.placeId === place.id)) return [];
+          if (findRestaurants(displayItems, '', 'all').some(item => item.placeId === place.id)) return [];
           const latitude = Number(place.y);
           const longitude = Number(place.x);
           if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return [];
@@ -423,16 +477,39 @@ export default function MapPage() {
     if (point?.id === event.pointerId && Math.hypot(event.clientX - point.x, event.clientY - point.y) > 12) cancelLongPress();
   }
 
-  function saveRestaurant(item: MapRestaurant): boolean {
+  async function saveRestaurant(item: MapRestaurant, options?: MapRecordSaveOptions): Promise<boolean> {
     if (!Number.isFinite(item.latitude) || !Number.isFinite(item.longitude) || Math.abs(item.latitude) > 90 || Math.abs(item.longitude) > 180) return false;
-    const exists = items.some(saved => saved.id === item.id);
-    const next = exists ? items.map(saved => saved.id === item.id ? item : saved) : [item, ...items];
+    if (user && authAvailable && !sharedMode && !memberRequired) {
+      setSharedErrorState({ userId: user.id, message: '공유 연결을 확인할 수 없어 저장을 멈췄어요. 다시 불러온 뒤 저장해 주세요.' });
+      return false;
+    }
+    let savedItem = item;
+    if (sharedMode) {
+      try {
+        const saved = await saveMapRecord(item, options);
+        const refreshed = await loadSharedMap();
+        setItems(refreshed);
+        savedItem = resolveSavedMapRestaurant(saved, refreshed);
+        setSharedErrorState(null);
+      } catch {
+        if (user) setSharedErrorState({ userId: user.id, message: '공유 기록을 저장하지 못했어요. 입력은 유지돼요.' });
+        return false;
+      }
+    } else {
+    const exists = localItems.some(saved => saved.id === item.id);
+    const next = exists ? localItems.map(saved => saved.id === item.id ? item : saved) : [item, ...localItems];
     try {
       saveRestaurants(next);
     } catch {
       return false;
     }
     setItems(next);
+    localItemsRef.current = next;
+    setLocalItems(next);
+    setLocalItemCount(next.length);
+    }
+    void window.MumukgNative?.triggerHaptic('success').catch(() => undefined);
+    const exists = items.some(saved => saved.id === item.id);
     if (!exists && item.placeId) {
       const result = placeSearchMarkersRef.current.find(({ id }) => id === item.placeId);
       result?.marker.setMap(null);
@@ -442,13 +519,44 @@ export default function MapPage() {
     }
     pendingMarkerRef.current?.setMap(null);
     pendingMarkerRef.current = null;
-    setSelectedRestaurant(item);
+    setSelectedRestaurant(savedItem);
     openPanel('restaurant');
     return true;
   }
 
+  async function removeSharedVisit(visitId: string) {
+    if (!sharedMode) return false;
+    try {
+      await deleteMapVisit(visitId);
+      const refreshed = await loadSharedMap();
+      setItems(refreshed);
+      const updated = refreshed.find(value => value.id === selectedRestaurant?.id);
+      if (updated) setSelectedRestaurant(updated);
+      return true;
+    } catch {
+      if (user) setSharedErrorState({ userId: user.id, message: '방문 기록을 삭제하지 못했어요. 연결과 권한을 확인해 주세요.' });
+      return false;
+    }
+  }
+
+  async function importLocalRecords() {
+    if (!sharedMode || importing || !localItemsRef.current.length) return;
+    setImporting(true);
+    setImportStatus('');
+    try {
+      const result: MapImportResult = await importLocalMap(localItemsRef.current);
+      const refreshed = await loadSharedMap();
+      setItems(refreshed);
+      setImportStatus(`가게 ${result.imported}곳 가져옴 · 방문 ${result.visitsImported}건 추가${result.conflicts ? ` · 기존 기록과 다른 메모 ${result.conflicts}건은 원격 기록을 유지했어요` : ''}`);
+    } catch {
+      setImportStatus('가져오기에 실패했어요. 원본 기록은 이 기기에 그대로 있어요. 다시 시도해 주세요.');
+    } finally {
+      setImporting(false);
+    }
+  }
+
   const draft: MapRestaurant = {
-    id: '', name, category, latitude: lat, longitude: lng, note: '', visited: false, createdAt: '', ...placeInfo,
+    id: '', name, category, latitude: lat, longitude: lng, note: '', visited: false, isFavorite: false, createdAt: '', ...placeInfo,
   };
 
   return <main className="map-theme fixed inset-0 z-0 overflow-hidden bg-slate-100 font-sans">
@@ -475,11 +583,13 @@ export default function MapPage() {
       {placesError && <p role="alert" className="pointer-events-auto mt-2 rounded-md bg-white/95 px-3 py-2 text-sm text-slate-600">{placesError}</p>}
       {locationError && <div className="pointer-events-auto mt-2 flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 text-sm text-slate-600"><span>{locationError}</span><Button type="button" variant="ghost" size="sm" onClick={locate} className="shrink-0 !h-auto !min-h-0 !px-1 !py-0 font-semibold text-slate-950">다시 시도</Button></div>}
       {mapError && <p role="alert" className="pointer-events-auto mt-2 rounded-md bg-white px-3 py-2 text-sm text-red-700">{mapError}</p>}
+      {sharedError && <p role="alert" className="pointer-events-auto mt-2 rounded-md bg-white px-3 py-2 text-sm text-red-700">{sharedError}</p>}
+      {memberRequired && <p className="pointer-events-auto mt-2 rounded-md bg-white px-3 py-2 text-sm text-slate-600">멤버 승인 전이라 기록은 이 기기에만 저장돼요.</p>}
       {!key && <p className="pointer-events-auto mt-2 rounded-md bg-white px-3 py-2 text-sm text-slate-700">지도 키 설정이 필요해요.</p>}
       {mapRange && <p className="pointer-events-auto mt-2 w-fit rounded-md bg-[#f7f5ef]/95 px-3 py-2 text-xs text-[#4d5b3c] shadow">현재 지도 범위 {mapRange.widthKm.toFixed(1)} × {mapRange.heightKm.toFixed(1)}km</p>}
     </div>
     <div className="absolute bottom-[calc(5rem+env(safe-area-inset-bottom))] left-4 z-10 max-w-[calc(100%-6rem)] rounded-xl bg-[var(--map-paper)] px-3 py-2 text-xs text-[var(--map-ink)] shadow-sm">
-      <p className="flex flex-wrap items-center gap-1">○ 가보고 싶음 · <Star size={12} aria-hidden="true" className="fill-current"/> 다녀온 곳</p>
+      <p className="flex flex-wrap items-center gap-x-3 gap-y-1">{([{ kind: 'heart', label: '하트 저장' }, { kind: 'visited', label: '다녀온 곳' }, { kind: 'memo', label: '가게 기억' }] as const).map(({ kind, label }) => <span key={label} className="inline-flex items-center gap-1"><span aria-hidden="true" className="inline-block h-6 w-5 bg-contain bg-center bg-no-repeat" style={{ backgroundImage: `url("${savedMarkerUrl(kind)}")` }}/>{label}</span>)}</p>
       {(query || filter !== 'all') && <button type="button" className="mt-1 min-h-11 text-left font-semibold underline underline-offset-4" onClick={() => { setQuery(''); setFilter('all'); }}>저장한 맛집 필터 해제</button>}
     </div>
     <Button type="button" variant="outline" disabled={!mapCreated || placesLoading || !canSearchPlaces} className="map-search-pig absolute bottom-[calc(5rem+env(safe-area-inset-bottom)+7rem)] right-4 z-20 size-12 min-h-12 !rounded-full !border border-[#d9d8b8] !bg-[#f7f5ef] !p-0 text-xl shadow-lg shadow-[#38432f]/20 hover:!bg-[#efe6d4]" aria-label="이 지역 가게 조회하기" title={placesLoading ? '가게 조회 중' : '이 지역 가게 조회하기'} onClick={searchNearbyPlaces}>🐷</Button>
@@ -499,12 +609,15 @@ export default function MapPage() {
           <Button type="button" variant="ghost" className="size-11 min-h-11 shrink-0 rounded-full !p-0" aria-label="전체 닫기" title="전체 닫기" onClick={closeAllPanels}><X size={20} aria-hidden="true"/></Button>
         </DrawerHeader>
         <MapNotebook
-          key={selectedRestaurant?.id ?? `${placeInfo.placeId ?? 'new'}-${lat}-${lng}`}
-          panel={activePanel} items={items} restaurant={selectedRestaurant} draft={draft}
+          key={`${displayRestaurant?.id ?? `${placeInfo.placeId ?? 'new'}-${lat}-${lng}`}-${activePanel}-${visitToEdit?.id ?? 'new'}`}
+          panel={activePanel} items={displayItems} restaurant={displayRestaurant} draft={draft}
           query={query} filter={filter} onQuery={setQuery} onFilter={setFilter} onPanel={pushPanel}
           onSelect={item => { setSelectedRestaurant(item); pushPanel('restaurant'); }}
           visitToEdit={visitToEdit} onVisit={visit => { setVisitToEdit(visit ?? null); pushPanel('visit'); }}
-          onSave={saveRestaurant} onKakao={openKakaoMap}
+          onDeleteVisit={removeSharedVisit}
+          onSave={saveRestaurant} onKakao={openKakaoMap} currentUserId={user?.id ?? null}
+          sharedMode={sharedMode} localItemCount={localItemCount} importing={importing}
+          importStatus={importStatus} onImport={importLocalRecords}
         />
       </>}
     </DepthDrawer>

@@ -1,22 +1,45 @@
-import type { Restaurant } from '../../lib/types';
+import type { MapImportItem, MapMemory, MapVisit as SharedMapVisit, Restaurant } from '../../lib/types';
 
 export type Revisit = 'yes' | 'maybe' | 'no';
-export type MapVisit = {
-  id: string;
-  date: string;
-  stars?: number;
-  revisit?: Revisit;
-  menu: string;
-  reason: string;
-  highlights?: string[];
-  legacySatisfaction?: Restaurant['satisfaction'];
-};
+export type MapVisit = SharedMapVisit & { date: string; menu: string; reason: string };
 export type MapRestaurant = Restaurant & {
+  isFavorite?: boolean;
   memory?: string;
   nextMenu?: string;
   tags?: string[];
   visits?: MapVisit[];
+  contributors?: MapMemory[];
+  createdBy?: string;
+  creatorNickname?: string;
 };
+
+export function normalizeLegacyMapItem(item: MapRestaurant): MapImportItem {
+  const visits = getVisits(item).map(visit => ({
+    ...visit,
+    sourceId: `${item.id}:${visit.id}`,
+  }));
+  const { memory, nextMenu, tags, ...place } = item;
+  delete place.visits;
+  delete place.contributors;
+  delete place.createdBy;
+  delete place.creatorNickname;
+  return {
+    place: {
+      ...place,
+      kakaoPlaceId: item.placeId ?? item.kakaoPlace?.id,
+      note: '',
+    },
+    memory: {
+      memory: [memory, item.note].filter(value => value?.trim()).join('\n'),
+      nextMenu,
+      tags: [...(tags ?? [])],
+      visited: visits.length > 0,
+      isFavorite: isFavorite(item),
+      visits,
+    },
+    visits,
+  };
+}
 export type RestaurantFilter = 'all' | 'wish' | 'revisit' | 'recent';
 export const revisitLabels: Record<Revisit, string> = { yes: '다시 갈래', maybe: '고민 중', no: '안 갈래' };
 export const memoryTags = ['혼밥 좋음', '가성비', '조용함', '시끄러움', '대기 김', '주차 편함'];
@@ -78,18 +101,44 @@ export function getVisits(item: MapRestaurant): MapVisit[] {
 export function withVisits(item: MapRestaurant, visits: MapVisit[]): MapRestaurant {
   const latest = getVisits({ ...item, visits })[0];
   return {
-    ...item, visits, visited: visits.length > 0,
+    ...item, isFavorite: isFavorite(item), visits, visited: visits.length > 0,
     rating: latest?.stars, satisfaction: latest?.legacySatisfaction,
     visitDates: visits.flatMap(v => v.date ? [v.date] : []),
     visitFeedback: visits.flatMap(v => v.legacySatisfaction ? [{ date: v.date, rating: v.legacySatisfaction, reason: v.reason }] : []),
   };
 }
 
+export function projectMemberMemory(item: MapRestaurant, userId: string | null): MapRestaurant {
+  const own = item.contributors?.find(memory => memory.userId === userId);
+  if (!own) return withVisits({ ...item, isFavorite: false, memory: '', nextMenu: undefined, tags: [], rating: undefined, satisfaction: undefined }, []);
+  return withVisits({ ...item, isFavorite: own.isFavorite ?? !own.visited, memory: own.memory, nextMenu: own.nextMenu, tags: own.tags }, own.visits);
+}
+
+export function isFavorite(item: MapRestaurant): boolean {
+  // Old unvisited saves were the wishlist, before hearts existed.
+  return item.isFavorite ?? getVisits(item).length === 0;
+}
+
+export function getRestaurantMarker(item: MapRestaurant): 'heart' | 'visited' | 'memo' | null {
+  if (isFavorite(item)) return 'heart';
+  if (getVisits(item).length) return 'visited';
+  if ([item.memory, item.nextMenu, item.note].some(value => value?.trim()) || item.tags?.length) return 'memo';
+  // Clearing my heart must not hide another member's shared records.
+  if (item.contributors?.some(memory => memory.visits.length)) return 'visited';
+  if (item.contributors?.some(memory => memory.isFavorite || memory.memory.trim() || memory.nextMenu?.trim() || memory.tags.length)) return 'memo';
+  return null;
+}
+
+export function getOtherMemberMemories(item: MapRestaurant, userId: string | null) {
+  return (item.contributors ?? []).filter(memory => memory.userId !== userId);
+}
+
 export function findRestaurants(items: MapRestaurant[], query: string, filter: RestaurantFilter): MapRestaurant[] {
   const terms = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
   const matches = items.filter(item => {
+    if (!getRestaurantMarker(item)) return false;
     const visits = getVisits(item);
-    if (filter === 'wish' && visits.length) return false;
+    if (filter === 'wish' && !isFavorite(item)) return false;
     if (filter === 'revisit' && visits[0]?.revisit !== 'yes') return false;
     if (filter === 'recent' && !visits[0]?.date) return false;
     const text = [item.name, item.category, item.address, item.memory, item.note, item.nextMenu, ...(item.tags ?? []), ...visits.flatMap(v => [v.menu, v.reason, ...(v.highlights ?? [])])].join(' ').toLocaleLowerCase();

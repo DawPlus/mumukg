@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { motion } from 'motion/react';
-import { useWindowVirtualizer } from '@tanstack/react-virtual';
 import {
   ClipboardPaste,
   Copy,
@@ -25,8 +24,11 @@ import {
   Youtube,
 } from 'lucide-react';
 import { Shell } from '@/components/shell';
+import { DepthDrawer } from '@/components/ui/depth-drawer';
+import { DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/toast';
+import { toast as toastManager } from '@/components/ui/toast';
+const toast = { add: (options: { title: string }) => toastManager.add({ ...options, timeout: 1000 }) };
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,7 +44,6 @@ import { loadRestaurants, saveRestaurants } from '@/lib/restaurants';
 import {
   type TasteLink,
   type TastePlatform,
-  detectTasteContentType,
   extractInstagramCode,
   extractYoutubeId,
   getTasteLinksServerSnapshot,
@@ -53,7 +54,6 @@ import {
 import './matnaboim.css';
 
 type FilterType = 'all' | 'youtube' | 'instagram' | 'favorite' | 'visited';
-type ContentTypeFilter = 'all' | 'restaurant' | 'recipe';
 
 export default function MatnaboimPage() {
   const links = useSyncExternalStore(
@@ -62,7 +62,6 @@ export default function MatnaboimPage() {
     getTasteLinksServerSnapshot
   );
   const [filter, setFilter] = useState<FilterType>('all');
-  const [contentType, setContentType] = useState<ContentTypeFilter>('all');
   const [search, setSearch] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [playingId, setPlayingId] = useState<string | null>(null);
@@ -72,7 +71,6 @@ export default function MatnaboimPage() {
   const [editingItem, setEditingItem] = useState<TasteLink | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editMemo, setEditMemo] = useState('');
-  const [editCategoryType, setEditCategoryType] = useState<'restaurant' | 'recipe'>('restaurant');
 
   // Random pick modal state & shuffle motion
   const [randomItem, setRandomItem] = useState<TasteLink | null>(null);
@@ -84,7 +82,6 @@ export default function MatnaboimPage() {
   // Form states for adding link
   const [inputUrl, setInputUrl] = useState('');
   const [loadingPreview, setLoadingPreview] = useState(false);
-  const [addCategoryType, setAddCategoryType] = useState<'restaurant' | 'recipe'>('restaurant');
   const [previewData, setPreviewData] = useState<{
     url: string;
     platform: TastePlatform;
@@ -187,9 +184,6 @@ export default function MatnaboimPage() {
         videoId: data.videoId,
         shortcode: data.shortcode,
       });
-      setAddCategoryType(
-        detectTasteContentType({ title: data.title || '', memo })
-      );
     } catch {
       toast.add({ title: '링크 정보를 확인하는 중 오류가 발생했습니다.' });
     } finally {
@@ -237,7 +231,6 @@ export default function MatnaboimPage() {
       createdAt: new Date().toISOString(),
       isFavorite: false,
       isVisited: false,
-      categoryType: addCategoryType,
     };
 
     const next = [newLink, ...links];
@@ -247,7 +240,6 @@ export default function MatnaboimPage() {
     setInputUrl('');
     setMemo('');
     setPreviewData(null);
-    setAddCategoryType('restaurant');
     setIsAddOpen(false);
 
     toast.add({ title: '맛나보임에 저장했습니다! 🍽️' });
@@ -292,15 +284,14 @@ export default function MatnaboimPage() {
       );
 
       if (alreadySaved) {
-        toast.add({ title: '이미 내 지도(/map)에 저장된 맛집입니다! 📍' });
+        toast.add({ title: '이미 내 지도(/map)에 저장된 항목이야! 📍' });
         return;
       }
 
-      const isRecipe = detectTasteContentType(item) === 'recipe';
       const newRestaurant: Restaurant = {
         id: `rest-matnaboim-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         name: item.title,
-        category: isRecipe ? '기타' : '한식',
+        category: '기타',
         latitude: 37.5665,
         longitude: 126.978,
         note: item.memo
@@ -322,9 +313,7 @@ export default function MatnaboimPage() {
   async function shareLink(item: TasteLink, e?: React.MouseEvent) {
     e?.stopPropagation();
     triggerHaptic(15);
-    const isRecipe = detectTasteContentType(item) === 'recipe';
-    const tagLabel = isRecipe ? '🍳 집밥 레시피' : '📍 맛집 탐방';
-    const shareText = `[맛나보임 ${tagLabel}] ${item.title}${item.memo ? `\n메모: ${item.memo}` : ''}`;
+    const shareText = `[맛나보임] ${item.title}${item.memo ? `\n메모: ${item.memo}` : ''}`;
 
     if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
       try {
@@ -377,7 +366,6 @@ export default function MatnaboimPage() {
     setEditingItem(item);
     setEditTitle(item.title);
     setEditMemo(item.memo || '');
-    setEditCategoryType(detectTasteContentType(item));
   }
 
   function handleSaveEdit(e: React.FormEvent) {
@@ -390,7 +378,6 @@ export default function MatnaboimPage() {
             ...l,
             title: editTitle.trim() || l.title,
             memo: editMemo.trim() || undefined,
-            categoryType: editCategoryType,
           }
         : l
     );
@@ -447,7 +434,6 @@ export default function MatnaboimPage() {
     if (filter === 'instagram' && l.platform !== 'instagram') return false;
     if (filter === 'favorite' && !l.isFavorite) return false;
     if (filter === 'visited' && !l.isVisited) return false;
-    if (contentType !== 'all' && detectTasteContentType(l) !== contentType) return false;
     if (q) {
       const matchesTitle = l.title.toLowerCase().includes(q);
       const matchesMemo = l.memo?.toLowerCase().includes(q);
@@ -466,8 +452,6 @@ export default function MatnaboimPage() {
       instagram: links.filter((l) => l.platform === 'instagram').length,
       favorite: links.filter((l) => !!l.isFavorite).length,
       visited: links.filter((l) => !!l.isVisited).length,
-      restaurant: links.filter((l) => detectTasteContentType(l) === 'restaurant').length,
-      recipe: links.filter((l) => detectTasteContentType(l) === 'recipe').length,
     }),
     [links]
   );
@@ -523,29 +507,6 @@ export default function MatnaboimPage() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  // TanStack Virtualizer for high-performance mobile scrolling
-  const listRef = useRef<HTMLDivElement | null>(null);
-  const [scrollMargin, setScrollMargin] = useState(0);
-
-  useEffect(() => {
-    if (listRef.current) {
-      setScrollMargin(listRef.current.offsetTop);
-    }
-  }, [isAddOpen, filter, contentType, search, colCount]);
-
-  const rowCount = Math.ceil(visibleLinks.length / colCount);
-
-  const rowVirtualizer = useWindowVirtualizer({
-    count: rowCount,
-    estimateSize: () => 400,
-    overscan: 2,
-    scrollMargin,
-  });
-
-  useEffect(() => {
-    rowVirtualizer.measure();
-  }, [rowVirtualizer, playingId, visibleLinks.length, isAddOpen, filter, contentType, colCount]);
 
   return (
     <Shell tone="editorial">
@@ -610,27 +571,23 @@ export default function MatnaboimPage() {
 
             <Button
               type="button"
-              onClick={() => setIsAddOpen((prev) => !prev)}
+              onClick={() => setIsAddOpen(true)}
               className="!h-8 !min-h-8 !rounded-full !bg-[#4d5b3c] !px-3 text-xs font-semibold !text-[#f7f5ef] hover:!bg-[#38432f] flex items-center gap-1 shrink-0 shadow-xs active:scale-95 transition-all"
             >
-              {isAddOpen ? (
-                <>
-                  <X className="size-3.5" /> 닫기
-                </>
-              ) : (
-                <>
-                  <Plus className="size-3.5" /> 추가
-                </>
-              )}
+              <Plus className="size-3.5" /> 추가
             </Button>
           </div>
         </header>
 
-        {/* Refined Add Link Section */}
-        {isAddOpen && (
+        {/* Add link drawer */}
+        <DepthDrawer open={isAddOpen} depth={1} onClose={() => setIsAddOpen(false)}>
+          <DrawerHeader className="flex-row items-center justify-between border-b border-[#d9d8b8] px-5 py-4 text-left">
+            <DrawerTitle className="text-lg font-bold text-[#4d5b3c]">영상 추가</DrawerTitle>
+            <button type="button" aria-label="닫기" onClick={() => setIsAddOpen(false)} className="flex size-11 items-center justify-center rounded-xl bg-[#efe6d4] text-[#4d5b3c]"><X size={20}/></button>
+          </DrawerHeader>
           <section
             aria-label="링크 추가"
-            className="rounded-2xl border border-[#4d5b3c]/10 bg-white p-3.5 shadow-sm space-y-3 animate-in fade-in duration-150"
+            className="min-h-0 flex-1 overflow-y-auto space-y-4 px-5 py-5 pb-[calc(env(safe-area-inset-bottom)+20px)] text-[#4d5b3c]"
           >
             <div className="flex gap-1.5">
               <input
@@ -704,34 +661,6 @@ export default function MatnaboimPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-semibold text-[#737d64] shrink-0">분류:</span>
-                  <div className="grid grid-cols-2 gap-1.5 flex-1">
-                    <button
-                      type="button"
-                      onClick={() => setAddCategoryType('restaurant')}
-                      className={`h-8 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-all ${
-                        addCategoryType === 'restaurant'
-                          ? 'bg-[#4d5b3c] text-white shadow-2xs'
-                          : 'bg-[#f4f0e6] text-[#6d775f] hover:bg-[#eadecb]'
-                      }`}
-                    >
-                      <span>📍 맛집 외식</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAddCategoryType('recipe')}
-                      className={`h-8 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-all ${
-                        addCategoryType === 'recipe'
-                          ? 'bg-[#a47536] text-white shadow-2xs'
-                          : 'bg-[#f4f0e6] text-[#6d775f] hover:bg-[#eadecb]'
-                      }`}
-                    >
-                      <span>🍳 집밥 레시피</span>
-                    </button>
-                  </div>
-                </div>
-
                 <div>
                   <input
                     type="text"
@@ -752,7 +681,7 @@ export default function MatnaboimPage() {
               </form>
             )}
           </section>
-        )}
+        </DepthDrawer>
 
         {/* Refined Pill Segmented Tabs & Search Bar */}
         <div className="space-y-2">
@@ -801,45 +730,6 @@ export default function MatnaboimPage() {
             })}
           </div>
 
-          {/* Sub Smart Content Filter (모두 / 📍 외식 맛집 / 🍳 집밥 레시피) */}
-          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#f4f0e6]/80 border border-[#4d5b3c]/[0.08]">
-            <button
-              type="button"
-              onClick={() => setContentType('all')}
-              className={`flex-1 py-1 rounded-lg text-[11px] font-semibold transition-all ${
-                contentType === 'all'
-                  ? 'bg-white text-[#343e29] shadow-2xs border border-[#4d5b3c]/15'
-                  : 'text-[#737d64] hover:text-[#343e29]'
-              }`}
-            >
-              모두보기
-            </button>
-            <button
-              type="button"
-              onClick={() => setContentType('restaurant')}
-              className={`flex-1 py-1 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 transition-all ${
-                contentType === 'restaurant'
-                  ? 'bg-[#4d5b3c] text-white shadow-2xs'
-                  : 'text-[#737d64] hover:text-[#343e29]'
-              }`}
-            >
-              <span>📍 맛집</span>
-              <span className="text-[10px] opacity-80 tabular-nums">({counts.restaurant})</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setContentType('recipe')}
-              className={`flex-1 py-1 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1 transition-all ${
-                contentType === 'recipe'
-                  ? 'bg-[#a47536] text-white shadow-2xs'
-                  : 'text-[#737d64] hover:text-[#343e29]'
-              }`}
-            >
-              <span>🍳 레시피</span>
-              <span className="text-[10px] opacity-80 tabular-nums">({counts.recipe})</span>
-            </button>
-          </div>
-
           {/* Rounded Pill Search Bar */}
           <div className="relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-3.5 text-[#737d64]" />
@@ -864,25 +754,13 @@ export default function MatnaboimPage() {
 
         {/* Responsive Feed & Masonry Cards (Mobile: 1-col feed, Tablet/Desktop: 2~3 col Masonry grid) */}
         {visibleLinks.length > 0 ? (
-          <div
-            ref={listRef}
-            className="relative w-full"
-            style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
-          >
-            {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-              const startIndex = virtualRow.index * colCount;
+          <div className="flex w-full flex-col gap-3.5">
+            {Array.from({ length: Math.ceil(visibleLinks.length / colCount) }, (_, index) => {
+              const startIndex = index * colCount;
               const rowItems = visibleLinks.slice(startIndex, startIndex + colCount);
 
               return (
-                <div
-                  key={virtualRow.key}
-                  ref={rowVirtualizer.measureElement}
-                  data-index={virtualRow.index}
-                  className="absolute top-0 left-0 w-full pb-3.5"
-                  style={{
-                    transform: `translateY(${virtualRow.start - rowVirtualizer.options.scrollMargin}px)`,
-                  }}
-                >
+                <div key={startIndex} className="w-full">
                   <div
                     className={`grid gap-3.5 ${
                       colCount === 3
@@ -898,7 +776,7 @@ export default function MatnaboimPage() {
                       const igCode = item.shortcode || extractInstagramCode(item.url);
 
                       return (
-                        <article key={item.id} className="matnaboim-card group">
+                        <article key={item.id} id={`taste-card-${item.id}`} className="matnaboim-card group scroll-mt-28">
                           {/* Media / Video Container */}
                           <div
                             className={`matnaboim-thumb ${
@@ -1003,15 +881,6 @@ export default function MatnaboimPage() {
                                       </>
                                     )}
                                   </span>
-                                  {detectTasteContentType(item) === 'recipe' ? (
-                                    <span className="matnaboim-smart-badge recipe shadow-2xs">
-                                      🍳 레시피
-                                    </span>
-                                  ) : (
-                                    <span className="matnaboim-smart-badge restaurant shadow-2xs">
-                                      📍 맛집
-                                    </span>
-                                  )}
                                 </div>
 
                                 {/* Top Right Actions (Stamp & Favorite) */}
@@ -1115,7 +984,7 @@ export default function MatnaboimPage() {
                                   type="button"
                                   onClick={(e) => searchOnMap(item, e)}
                                   className="inline-flex items-center gap-1 px-2 py-1.5 rounded-xl bg-[#f4f0e6] text-[#6d775f] hover:bg-[#eadecb] hover:text-[#343e29] text-xs font-medium transition-all active:scale-95"
-                                  title="카카오맵에서 맛집 찾기"
+                                  title="카카오맵에서 장소 찾기"
                                 >
                                   <ExternalLink className="size-3 text-[#7b856e]" />
                                   <span>카카오맵</span>
@@ -1169,19 +1038,15 @@ export default function MatnaboimPage() {
                 ? '🥢'
                 : filter === 'favorite'
                 ? '⭐'
-                : contentType === 'recipe'
-                ? '🍳'
                 : '🍽️'}
             </span>
             <h3 className="text-sm font-bold text-[#343e29]">
               {search
                 ? '검색 결과가 없어요'
                 : filter === 'visited'
-                ? '아직 도장 깬 맛집이 없어요'
+                ? '아직 방문 도장을 찍은 영상이 없어요'
                 : filter === 'favorite'
                 ? '보관한 영상이 없어요'
-                : contentType === 'recipe'
-                ? '집밥 레시피 영상이 없어요'
                 : '저장된 영상이 없어요'}
             </h3>
             <p className="text-[11px] text-[#737d64]">
@@ -1191,18 +1056,15 @@ export default function MatnaboimPage() {
                 ? '영상 카드의 [도장] 버튼을 눌러 도장 깨기를 기록해보세요!'
                 : filter === 'favorite'
                 ? '자주 꺼내보고 싶은 영상의 별표(⭐)를 눌러보세요!'
-                : contentType === 'recipe'
-                ? '따라 해보고 싶은 레시피 영상 링크를 등록해보세요.'
-                : '먹어보고 싶은 맛집 릴스나 유튜브 링크를 등록해보세요!'}
+                : '보관하고 싶은 음식 영상 링크를 등록해보세요!'}
             </p>
-            {search || filter !== 'all' || contentType !== 'all' ? (
+            {search || filter !== 'all' ? (
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => {
                   setSearch('');
                   setFilter('all');
-                  setContentType('all');
                 }}
                 className="!mt-2 !h-8 !rounded-full border border-[#4d5b3c]/15 bg-white text-xs font-semibold text-[#4d5b3c] shadow-2xs"
               >
@@ -1246,34 +1108,6 @@ export default function MatnaboimPage() {
                   required
                   className="w-full min-h-10 rounded-xl border border-[#4d5b3c]/12 bg-white px-3 text-[14px] text-[#343e29] outline-none focus:border-[#4d5b3c]"
                 />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-[#4d5b3c]">분류</label>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setEditCategoryType('restaurant')}
-                    className={`h-8 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-all ${
-                      editCategoryType === 'restaurant'
-                        ? 'bg-[#4d5b3c] text-white shadow-2xs'
-                        : 'bg-white border border-[#4d5b3c]/15 text-[#6d775f] hover:bg-[#f4f0e6]'
-                    }`}
-                  >
-                    <span>📍 외식 맛집</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEditCategoryType('recipe')}
-                    className={`h-8 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-all ${
-                      editCategoryType === 'recipe'
-                        ? 'bg-[#a47536] text-white shadow-2xs'
-                        : 'bg-white border border-[#4d5b3c]/15 text-[#6d775f] hover:bg-[#f4f0e6]'
-                    }`}
-                  >
-                    <span>🍳 집밥 레시피</span>
-                  </button>
-                </div>
               </div>
 
               <div className="space-y-1">
@@ -1392,13 +1226,10 @@ export default function MatnaboimPage() {
                 disabled={isShuffling}
                 onClick={() => {
                   if (randomItem) {
-                    const targetIndex = visibleLinks.findIndex((l) => l.id === randomItem.id);
-                    if (targetIndex >= 0) {
-                      rowVirtualizer.scrollToIndex(targetIndex, {
-                        align: 'center',
-                        behavior: 'smooth',
-                      });
-                    }
+                    document.getElementById(`taste-card-${randomItem.id}`)?.scrollIntoView({
+                      block: 'center',
+                      behavior: 'smooth',
+                    });
                     setPlayingId(randomItem.id);
                     setRandomItem(null);
                   }

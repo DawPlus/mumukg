@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
+import { IconButton, IconButtonParticles } from '@animate-ui/react/primitives/buttons/icon';
 import { Input } from '@/components/ui/input';
 import { Calendar } from '@/components/ui/calendar';
 import { format, parseISO } from 'date-fns';
@@ -11,17 +12,25 @@ import PeekRating from '@/components/ui/peek-rating';
 import { toast } from '@/components/ui/toast';
 import { getFoodIcon } from '@/lib/food-categories';
 import { ChevronDown, Plus } from 'lucide-react';
+import { AnimateIcon } from '@animate-ui/react/icons';
+import { Copy01 } from '@/components/animate-ui/icons/hugeicons/copy-01';
+import { PhoneCall } from '@/components/animate-ui/icons/hugeicons/phone-call';
+import { Route } from '@/components/animate-ui/icons/hugeicons/route';
+import { Location01 } from '@/components/animate-ui/icons/hugeicons/location-01';
+import { Favourite } from '@/components/animate-ui/icons/hugeicons/favourite';
 import {
-  composeVisitPost, findRestaurants, getVisits, memoryTags, revisitLabels, todayLocal, validVisitDate, visitHighlights, withVisits,
+  composeVisitPost, findRestaurants, isFavorite, getOtherMemberMemories, getVisits, memoryTags, revisitLabels, todayLocal, validVisitDate, visitHighlights, withVisits,
   type MapRestaurant, type MapVisit, type RestaurantFilter, type Revisit,
 } from './restaurant-memory';
+import { canManageMapVisit, canUpdateMapPlace } from '@/lib/map-import';
+import type { MapRecordSaveOptions } from '@/lib/map-db';
 
 export type MapPanel = 'list' | 'restaurant' | 'memory' | 'visit';
 export const panelTitles: Record<MapPanel, string> = {
   list: '저장한 맛집', restaurant: '나의 맛집 노트', memory: '기억 수정', visit: '방문 기록',
 };
 const filters: { value: RestaurantFilter; label: string }[] = [
-  { value: 'all', label: '전체' }, { value: 'wish', label: '가보고 싶음' },
+  { value: 'all', label: '전체' }, { value: 'wish', label: '하트 저장' },
   { value: 'revisit', label: '다시 갈 곳' }, { value: 'recent', label: '최근 방문순' },
 ];
 const blankVisit = (): MapVisit => ({ id: '', date: todayLocal(), stars: undefined, menu: '', reason: '' });
@@ -77,15 +86,18 @@ function VisitFields({ value, onChange }: { value: MapVisit; onChange: (value: M
 }
 
 function VisitSummary({ visit }: { visit?: MapVisit }) {
-  if (!visit) return <span>가보고 싶음</span>;
-  return <span>{[
-    visit.stars ? `별점 ${visit.stars}/5` : '별점 미기록',
-    visit.revisit ? revisitLabels[visit.revisit] : visit.legacySatisfaction ? `기존 평가: ${visit.legacySatisfaction === 'satisfied' ? '만족' : '불만족'}` : '재방문 의향 미정',
-    ...(visit.highlights ?? []),
-  ].join(' · ')}</span>;
+  if (!visit) return <span className="map-visit-unrated">아직 방문 전</span>;
+  const intent = visit.revisit ? revisitLabels[visit.revisit] : visit.legacySatisfaction ? (visit.legacySatisfaction === 'satisfied' ? '만족' : '불만족') : null;
+  const highlights = visit.highlights ?? [];
+  if (!visit.stars && !intent && !highlights.length) return <span className="map-visit-unrated">방문만 기록했어요</span>;
+  return <span className="map-visit-summary">
+    {!!visit.stars && <span className="map-visit-stars"><span aria-hidden="true">★</span> {visit.stars}<small>/5</small></span>}
+    {intent && <span>{intent}</span>}
+    {highlights.map(tag => <span key={tag} className="map-visit-highlight">{tag}</span>)}
+  </span>;
 }
 
-function PlaceInfo({ item, onKakao }: { item: MapRestaurant; onKakao: (item: MapRestaurant) => void }) {
+function PlaceInfo({ item, onKakao, headerActions, date }: { item: MapRestaurant; onKakao: (item: MapRestaurant) => void; headerActions?: ReactNode; date?: string }) {
   const [parcel, setParcel] = useState(false);
   const road = item.kakaoPlace?.road_address_name;
   const lot = item.kakaoPlace?.address_name;
@@ -95,6 +107,21 @@ function PlaceInfo({ item, onKakao }: { item: MapRestaurant; onKakao: (item: Map
     try { await navigator.clipboard.writeText(address); toast.add({ title: '주소를 복사했어요.' }); }
     catch { toast.add({ title: '주소를 복사하지 못했어요.' }); }
   }
+  if (headerActions) return <header className="map-place-header">
+    <div className="map-place-identity">
+      <Image src={getFoodIcon(item.category)} width={32} height={32} alt=""/>
+      <h2>{item.name}</h2>
+      {date && <time dateTime={date}>{date.replaceAll('-', '.')}</time>}
+    </div>
+    <p className="map-place-location">{address || '주소 정보 없음'}</p>
+    <div className="map-place-toolbar" role="group" aria-label="가게 바로가기">
+      {road && lot && <AnimateIcon asChild animateOnHover animateOnTap completeOnStop><Button type="button" variant="ghost" className="map-header-action map-header-pin" aria-label={`${parcel ? '도로명' : '지번'} 주소로 전환`} title="주소 종류 바꾸기" onClick={() => setParcel(!parcel)}><Location01 size={18} aria-hidden="true"/></Button></AnimateIcon>}
+      {address && <AnimateIcon asChild animateOnHover animateOnTap completeOnStop><Button type="button" variant="ghost" className="map-header-action" aria-label="주소 복사" title="주소 복사" onClick={copyAddress}><Copy01 size={18} aria-hidden="true"/></Button></AnimateIcon>}
+      {item.phone && <AnimateIcon asChild animateOnHover animateOnTap completeOnStop><a className="map-header-action map-header-phone" href={`tel:${item.phone}`} aria-label={`전화 걸기 ${item.phone}`} title="전화"><PhoneCall size={18} aria-hidden="true"/></a></AnimateIcon>}
+      <AnimateIcon asChild animateOnHover animateOnTap completeOnStop><Button type="button" variant="ghost" className="map-header-action map-header-map" aria-label="카카오맵에서 가게 보기" title="카카오맵" onClick={() => onKakao(item)}><Route size={18} aria-hidden="true"/></Button></AnimateIcon>
+      {headerActions}
+    </div>
+  </header>;
   return <section className="map-place-card" aria-label="가게 정보">
     <div className="map-place-leading">
       {road && lot ? <Button type="button" variant="ghost" className="map-place-pin" aria-label={`${parcel ? '지번' : '도로명'} 주소로 전환`} title="주소 종류 바꾸기" onClick={() => setParcel(!parcel)}><span className="map-pin-emoji" aria-hidden="true">📍</span></Button> : <span className="map-place-pin" aria-hidden="true"><span className="map-pin-emoji">📍</span></span>}
@@ -107,7 +134,7 @@ function PlaceInfo({ item, onKakao }: { item: MapRestaurant; onKakao: (item: Map
   </section>;
 }
 
-export function MapNotebook({ panel, items, restaurant, draft, query, filter, onQuery, onFilter, onPanel, onSelect, onSave, onKakao, visitToEdit, onVisit }: {
+export function MapNotebook({ panel, items, restaurant, draft, query, filter, onQuery, onFilter, onPanel, onSelect, onSave, onKakao, visitToEdit, onVisit, onDeleteVisit, currentUserId, sharedMode, localItemCount, importing, importStatus, onImport }: {
   panel: MapPanel;
   items: MapRestaurant[];
   restaurant: MapRestaurant | null;
@@ -120,51 +147,103 @@ export function MapNotebook({ panel, items, restaurant, draft, query, filter, on
   onSelect: (item: MapRestaurant) => void;
   visitToEdit: MapVisit | null;
   onVisit: (visit?: MapVisit) => void;
-  onSave: (item: MapRestaurant) => boolean;
+  onDeleteVisit: (visitId: string) => Promise<boolean>;
+  onSave: (item: MapRestaurant, options?: MapRecordSaveOptions) => Promise<boolean>;
   onKakao: (item: MapRestaurant) => void;
+  currentUserId: string | null;
+  sharedMode: boolean;
+  localItemCount: number;
+  importing: boolean;
+  importStatus: string;
+  onImport: () => void;
 }) {
   const item = restaurant ?? draft;
+  const heartGradientId = useId();
   const [memory, setMemory] = useState({ name: item.name, text: restaurantMemoryText(item), tags: item.tags ?? [] });
-  const [visited, setVisited] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const saveLock = useRef(false);
   const [visit, setVisit] = useState<MapVisit>(() => panel === 'visit' && visitToEdit ? { ...visitToEdit } : blankVisit());
+  const draftRestaurantId = useRef('');
   const editingVisit = !!visitToEdit;
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
   const visits = restaurant ? getVisits(restaurant) : [];
   const latest = visits[0];
+  const canEditName = !sharedMode || !item.createdBy || canUpdateMapPlace(item.createdBy, currentUserId ?? '');
 
-  function save(next: MapRestaurant) {
-    if (!onSave(next)) { setError('저장하지 못했어요. 입력은 유지돼요. 저장 공간을 확인한 뒤 다시 시도해 주세요.'); return false; }
-    setError('');
-    setDeleting(false);
-    return true;
+  async function save(next: MapRestaurant, options?: MapRecordSaveOptions) {
+    if (saveLock.current) return false;
+    saveLock.current = true;
+    setSaving(true);
+    try {
+      if (!await onSave(next, options)) throw new Error('save failed');
+      setError('');
+      setDeleting(false);
+      return true;
+    } catch {
+      setError('저장하지 못했어요. 입력은 유지돼요. 연결 상태와 멤버 권한을 확인한 뒤 다시 시도해 주세요.');
+      return false;
+    } finally {
+      saveLock.current = false;
+      setSaving(false);
+    }
   }
 
-  function submitVisit(event: FormEvent) {
+  async function toggleFavorite() {
+    if (!memory.name.trim()) { setError('가게 이름을 입력해 주세요.'); return; }
+    const favorite = restaurant ? !isFavorite(restaurant) : true;
+    await save({
+      ...item, id: item.id || (draftRestaurantId.current ||= crypto.randomUUID()),
+      name: restaurant ? item.name : memory.name.trim(),
+      createdAt: item.createdAt || new Date().toISOString(), isFavorite: favorite,
+      ...(!restaurant ? { memory: memory.text.trim(), tags: memory.tags } : {}),
+    }, { createPlace: !restaurant, favorite, ...(!restaurant ? { memory: true } : {}) });
+  }
+
+  const heartButton = <AnimateIcon asChild animateOnHover animateOnTap completeOnStop><IconButton type="button" className="map-heart-button" disabled={saving} aria-busy={saving} aria-label={restaurant && isFavorite(restaurant) ? '하트 저장 해제' : '하트로 저장'} aria-pressed={!!restaurant && isFavorite(restaurant)} onClick={() => void toggleFavorite()}>
+    <Favourite size={18} strokeWidth={1.5} fill={restaurant && isFavorite(restaurant) ? `url(#${heartGradientId})` : 'none'} aria-hidden="true" decoration={<>
+      <defs><linearGradient id={heartGradientId} x1="0" y1="0" x2=".75" y2="1"><stop offset="0%" stopColor="#F5B5A8"/><stop offset="48%" stopColor="#D97970"/><stop offset="100%" stopColor="#B4534B"/></linearGradient></defs>
+      {restaurant && isFavorite(restaurant) && <path d="M6 9c.3-1.5 1.4-2.1 2.7-1.8" fill="none" stroke="white" strokeOpacity=".75" strokeWidth="1.5" strokeLinecap="round"/>}
+    </>}/>
+    <IconButtonParticles size={5}/>
+  </IconButton></AnimateIcon>;
+
+  async function submitVisit(event: FormEvent) {
     event.preventDefault();
     if (!restaurant) return;
+    if (editingVisit && !canManageMapVisit(visit, currentUserId, sharedMode)) { setError('내가 남긴 방문만 수정할 수 있어요.'); return; }
     if (!validVisitDate(visit.date)) { setError('오늘까지의 올바른 방문 날짜를 선택해 주세요.'); return; }
     const value = { ...visit, id: visit.id || crypto.randomUUID(), menu: visit.menu.trim(), reason: visit.reason.trim(), highlights: visit.highlights ?? [] };
+    setVisit(value);
     const history = [...visits].reverse();
-    save(withVisits(restaurant, editingVisit ? history.map(v => v.id === value.id ? value : v) : [...history, value]));
+    await save(withVisits(restaurant, editingVisit ? history.map(v => v.id === value.id ? value : v) : [...history, value]), { visits: [value] });
   }
 
-  function submitMemory(event: FormEvent) {
+  async function submitMemory(event: FormEvent) {
     event.preventDefault();
     if (!memory.name.trim()) { setError('가게 이름을 입력해 주세요.'); return; }
-    if (!restaurant && visited && !validVisitDate(visit.date)) { setError('오늘까지의 올바른 방문 날짜를 선택해 주세요.'); return; }
-    let next: MapRestaurant = {
-      ...item, id: item.id || crypto.randomUUID(), createdAt: item.createdAt || new Date().toISOString(),
+    const id = item.id || (draftRestaurantId.current ||= crypto.randomUUID());
+    const next: MapRestaurant = {
+      ...item, id, isFavorite: restaurant ? isFavorite(restaurant) : false, createdAt: item.createdAt || new Date().toISOString(),
       name: memory.name.trim(), memory: memory.text.trim(), nextMenu: '', note: '', tags: memory.tags,
     };
-    if (!restaurant) next = withVisits(next, visited ? [{ ...visit, id: crypto.randomUUID(), menu: visit.menu.trim(), reason: visit.reason.trim() }] : []);
-    save(next);
+    const options: MapRecordSaveOptions = {
+      createPlace: !restaurant,
+      memory: true,
+      ...(restaurant && memory.name.trim() !== restaurant.name ? { placeName: memory.name.trim() } : {}),
+    };
+    await save(next, options);
   }
 
   if (panel === 'list') {
+    const hasSaved = findRestaurants(items, '', 'all').length > 0;
     const visible = findRestaurants(items, query, filter);
     return <div className="map-notebook flex-1 overflow-y-auto px-5 pb-8 sm:px-8">
       <div className="sticky top-0 z-10 space-y-3 bg-[var(--map-paper)] py-4">
+        {sharedMode && localItemCount > 0 && <section className="rounded-xl border border-[var(--map-rule)] bg-white/70 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-medium">이 기기의 기록 {localItemCount}곳을 공유 지도에 가져올 수 있어요.</p><Button type="button" variant="outline" className="map-choice min-h-11" disabled={importing} onClick={onImport}>{importing ? '가져오는 중…' : '기록 가져오기'}</Button></div>
+          {importStatus && <p role="status" className="mt-2 text-xs leading-5">{importStatus}</p>}
+        </section>}
         <Input aria-label="저장한 맛집 검색" value={query} onChange={e => onQuery(e.target.value)} placeholder="가게 · 메뉴 · 기억 검색"/>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" aria-label="맛집 필터">{filters.map(({ value, label }) => <Button key={value} type="button" variant="outline" hoverScale={1.035} tapScale={0.92} className="map-choice" aria-pressed={filter === value} onClick={() => onFilter(value)}>{label}</Button>)}</div>
         <p className="map-muted text-sm" aria-live="polite">{visible.length}곳{filter === 'recent' ? ' · 방문 날짜가 있는 기록부터' : ''}</p>
@@ -175,7 +254,7 @@ export function MapNotebook({ panel, items, restaurant, draft, query, filter, on
           <button type="button" onClick={() => onSelect(saved)} className="map-saved-row w-full py-5 text-left">
             <div className="flex items-start gap-3">
               <Image src={getFoodIcon(saved.category)} width={36} height={36} alt="" className="shrink-0"/>
-              <div className="min-w-0 flex-1"><h3 className="break-words text-base font-semibold">{saved.name}</h3><p className="map-muted mt-1 text-sm">{recent ? '다녀온 곳' : '가보고 싶음'}{recent?.date ? ` · ${recent.date.replaceAll('-', '.')}` : ''}</p></div>
+              <div className="min-w-0 flex-1"><h3 className="break-words text-base font-semibold">{saved.name}</h3><p className="map-muted mt-1 text-sm">{isFavorite(saved) ? '♥ 하트 저장' : recent ? '다녀온 곳' : '가게 기억'}{recent?.date ? ` · ${recent.date.replaceAll('-', '.')}` : ''}</p></div>
               <span aria-hidden="true" className="text-lg">›</span>
             </div>
             <p className="mt-3 whitespace-pre-line break-words text-sm font-medium leading-6">{restaurantMemoryText(saved) || recent?.reason || '아직 남긴 기억이 없어요.'}</p>
@@ -183,16 +262,22 @@ export function MapNotebook({ panel, items, restaurant, draft, query, filter, on
             {!!saved.tags?.length && <p className="map-muted mt-2 text-xs leading-5">{saved.tags.join(' · ')}</p>}
           </button>
         </li>;
-      })}</ul> : <div className="py-12 text-center"><p className="font-semibold">{items.length ? '조건에 맞는 맛집이 없어요.' : '기억하고 싶은 가게를 모아봐요.'}</p><p className="map-muted mt-2 text-sm">{items.length ? '다른 단어로 검색하거나 필터를 바꿔보세요.' : '지도에서 가게를 조회하거나 원하는 위치를 길게 눌러 저장해요.'}</p>{items.length > 0 && <Button type="button" variant="outline" className="map-choice mt-5" onClick={() => { onQuery(''); onFilter('all'); }}>검색·필터 초기화</Button>}</div>}
+      })}</ul> : <div className="py-12 text-center"><p className="font-semibold">{hasSaved ? '조건에 맞는 맛집이 없어요.' : '기억하고 싶은 가게를 모아봐요.'}</p><p className="map-muted mt-2 text-sm">{hasSaved ? '다른 단어로 검색하거나 필터를 바꿔보세요.' : '지도에서 가게를 조회하거나 원하는 위치를 길게 눌러 저장해요.'}</p>{hasSaved && <Button type="button" variant="outline" className="map-choice mt-5" onClick={() => { onQuery(''); onFilter('all'); }}>검색·필터 초기화</Button>}</div>}
     </div>;
   }
 
   if (panel === 'visit' && restaurant) return <form className="map-notebook flex min-h-0 flex-1 flex-col" onSubmit={submitVisit}>
-    <div className="flex-1 space-y-6 overflow-y-auto px-5 py-6 sm:px-8">
+    <div className="map-registration-body flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-8">
       <div><h2 className="text-xl font-semibold">{restaurant.name}</h2><p className="map-muted mt-1 text-sm">{editingVisit ? '지난 방문의 기록을 고쳐요.' : '평가만 남겨도 괜찮아요.'}</p></div>
       <VisitFields value={visit} onChange={setVisit}/>
       {editingVisit && <div className="border-t border-[var(--map-rule)] pt-4">
-        {deleting ? <div role="group" aria-label="방문 기록 삭제 확인" className="space-y-3"><p className="text-sm">이 방문 기록을 삭제할까요? 가게와 다른 방문 기록은 남아요.</p><div className="flex flex-wrap gap-2"><Button type="button" variant="outline" className="map-choice" onClick={() => setDeleting(false)}>취소</Button><Button type="button" className="map-danger" onClick={() => save(withVisits(restaurant, [...visits].reverse().filter(v => v.id !== visit.id)))}>이 기록 삭제</Button></div></div>
+        {deleting ? <div role="group" aria-label="방문 기록 삭제 확인" className="space-y-3"><p className="text-sm">이 방문 기록을 삭제할까요? 가게와 다른 방문 기록은 남아요.</p><div className="flex flex-wrap gap-2"><Button type="button" variant="outline" className="map-choice" onClick={() => setDeleting(false)}>취소</Button><Button type="button" className="map-danger" onClick={() => { void (async () => {
+          if (!canManageMapVisit(visit, currentUserId, sharedMode)) { setError('내가 남긴 방문만 삭제할 수 있어요.'); return; }
+          if (sharedMode) {
+            if (await onDeleteVisit(visit.id)) { setDeleting(false); setError(''); }
+            else setError('삭제하지 못했어요. 연결과 권한을 확인해 주세요.');
+          } else await save(withVisits(restaurant, [...visits].reverse().filter(v => v.id !== visit.id)));
+        })(); }}>이 기록 삭제</Button></div></div>
           : <Button type="button" variant="ghost" className="map-text-button text-[var(--map-danger)]!" onClick={() => setDeleting(true)}>방문 기록 삭제</Button>}
       </div>}
     </div>
@@ -200,14 +285,10 @@ export function MapNotebook({ panel, items, restaurant, draft, query, filter, on
   </form>;
 
   if (panel === 'memory' || !restaurant) return <form className="map-notebook flex min-h-0 flex-1 flex-col" onSubmit={submitMemory}>
-    <div className="flex-1 space-y-6 overflow-y-auto px-5 py-6 sm:px-8">
+    <div className="map-registration-body flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-8">
       <div className="flex items-center gap-3"><Image src={getFoodIcon(item.category)} width={48} height={48} alt=""/><div className="min-w-0 flex-1"><h2 className="text-xl font-semibold">{restaurant ? '다음의 나를 위한 기억' : item.name || '새 맛집 저장'}</h2>{(item.placeId || item.address || item.phone || item.kakaoPlace) && <PlaceInfo item={item} onKakao={onKakao}/>}</div></div>
-      {!item.placeId && <label className="map-field">가게 이름<Input required maxLength={100} value={memory.name} onChange={e => setMemory({ ...memory, name: e.target.value })} placeholder="가게 이름"/></label>}
-      {!restaurant && <fieldset className="space-y-2"><legend className="map-field-label">어떤 곳으로 저장할까?</legend><div className="space-y-1">
-        <Button type="button" variant="outline" hoverScale={1.01} tapScale={0.98} className="map-choice map-status-choice" aria-pressed={!visited} onClick={() => setVisited(false)}><span aria-hidden="true">📍</span>가보고 싶음</Button>
-        <Button type="button" variant="outline" hoverScale={1.01} tapScale={0.98} className="map-choice map-status-choice" aria-pressed={visited} onClick={() => setVisited(true)}><span aria-hidden="true">🍽️</span>다녀왔음</Button>
-      </div></fieldset>}
-      {!restaurant && visited && <VisitFields value={visit} onChange={setVisit}/>}
+      {!item.placeId && canEditName && <label className="map-field">가게 이름<Input required maxLength={100} value={memory.name} onChange={e => setMemory({ ...memory, name: e.target.value })} placeholder="가게 이름"/></label>}
+      {!restaurant && <div className="map-heart-save">{heartButton}<div><strong>하트로 저장</strong><p>기억은 필요할 때 더해요</p></div></div>}
       <details className="map-extra-details">
         <summary><span className="map-extra-plus"><Plus size={18} aria-hidden="true"/></span><span className="map-extra-copy"><strong>가게 기억 더하기</strong><small>특징·메모·가게 정보</small></span><span className="map-extra-action">선택 <ChevronDown size={16} aria-hidden="true"/></span></summary>
         <div className="mt-4 space-y-5">
@@ -216,7 +297,7 @@ export function MapNotebook({ panel, items, restaurant, draft, query, filter, on
         </div>
       </details>
     </div>
-    <div className="map-footer">{error && <p role="alert" className="map-error mb-3">{error}</p>}<Button type="submit" className="map-primary">{restaurant ? '기억 저장' : visited ? '맛집과 첫 방문 저장' : '가보고 싶은 곳 저장'}</Button></div>
+    <div className="map-footer">{error && <p role="alert" className="map-error mb-3">{error}</p>}<Button type="submit" disabled={saving || (!restaurant && !memory.text.trim() && !memory.tags.length)} className="map-primary">{saving ? '저장 중…' : '기억 저장'}</Button></div>
   </form>;
 
   const datedVisits = visits.filter(v => v.date);
@@ -235,22 +316,23 @@ export function MapNotebook({ panel, items, restaurant, draft, query, filter, on
     const middle = (previous.x + point.x) / 2;
     return `${path} C ${middle} ${previous.y}, ${middle} ${point.y}, ${point.x} ${point.y}`;
   }, '');
-  const chartArea = `${chartLine} L 345 90 L 15 90 Z`;
+
   const latestChartMonth = [...chartPoints].reverse().find(point => point.count)?.month;
   return <div className="map-notebook flex min-h-0 flex-1 flex-col">
-    <div className="flex-1 space-y-5 overflow-y-auto px-5 py-6 sm:px-8">
-      <div className="map-restaurant-heading"><Image src={getFoodIcon(restaurant.category)} width={48} height={48} alt="" className="map-restaurant-category-icon"/><div className="map-restaurant-heading-content"><div className="map-restaurant-title-row"><h2 className="break-words text-2xl font-semibold leading-tight">{restaurant.name}</h2><div className="map-restaurant-meta"><span>{restaurant.category} · {latest ? '다녀온 곳' : '가보고 싶은 곳'}</span>{latest?.date && <time dateTime={latest.date}>{latest.date.replaceAll('-', '.')}</time>}</div></div><PlaceInfo item={restaurant} onKakao={onKakao}/></div></div>
+    <div className="map-detail-body flex-1 space-y-4 overflow-y-auto px-5 py-4 sm:px-8">
+      <PlaceInfo item={restaurant} onKakao={onKakao} headerActions={heartButton} date={latest?.date}/>
+      {error && <p role="alert" className="map-error">{error}</p>}
       <section className="map-visit-chart" aria-label="최근 12개월 방문 횟수">
         <div className="map-visit-chart-heading"><h3>최근 12개월 방문</h3><strong>{chartTotal}회</strong></div>
         <svg viewBox="0 0 360 120" className="map-visit-chart-svg" role="img" aria-label={monthlyVisits.map(month => `${month.month} ${month.count}회`).join(', ')}>
-          <defs>
-            <linearGradient id="map-visit-line-gradient" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stopColor="var(--map-ink)"/><stop offset="65%" stopColor="var(--map-ink)"/><stop offset="100%" stopColor="var(--map-sage)"/></linearGradient>
-            <linearGradient id="map-visit-area-gradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--map-ink)" stopOpacity=".2"/><stop offset="100%" stopColor="var(--map-sage)" stopOpacity=".02"/></linearGradient>
-          </defs>
-          {[38, 62, 86].map(y => <line key={y} x1="15" x2="345" y1={y} y2={y} stroke="var(--map-rule)" strokeOpacity=".55" strokeDasharray="2 5"/>)}
-          {chartTotal > 0 && <path className="visit-chart-area" d={chartArea} fill="url(#map-visit-area-gradient)"/>}
-          <path className={`visit-chart-line${chartTotal ? '' : ' visit-chart-line-empty'}`} d={chartLine} pathLength="1" fill="none" stroke={chartTotal ? 'url(#map-visit-line-gradient)' : 'var(--map-sage)'} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
-          {chartTotal > 0 && <><path className="visit-chart-flow-glow" d={chartLine} pathLength="1" fill="none" stroke="var(--map-sage)" strokeWidth="6" strokeLinecap="round"/><path className="visit-chart-flow" d={chartLine} pathLength="1" fill="none" stroke="var(--map-paper)" strokeWidth="2" strokeLinecap="round"/></>}
+          {[38, 62, 86].map(y => <line key={y} x1="15" x2="345" y1={y} y2={y} stroke="var(--map-rule)" strokeOpacity=".45"/>)}
+          <path className={`visit-chart-line${chartTotal ? '' : ' visit-chart-line-empty'}`} d={chartLine} pathLength="1" fill="none" stroke="var(--map-chart-accent)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+          {chartTotal > 0 && <>
+            <path className="visit-chart-flow" d={chartLine} pathLength="1" fill="none" stroke="var(--map-chart-light)" strokeWidth="3" strokeLinecap="round"/>
+            <circle className="visit-chart-traveler" r="4" fill="var(--map-chart-accent)" stroke="var(--map-paper)" strokeWidth="2" aria-hidden="true">
+              <animateMotion path={chartLine} dur="4s" begin="1s" repeatCount="indefinite" calcMode="paced"/>
+            </circle>
+          </>}
           {chartPoints.map((point, index) => <g key={point.month}>
             {point.count > 0 && <>{point.month === latestChartMonth && <circle className="visit-chart-point-halo" cx={point.x} cy={point.y} r="8"/>}<circle className={`visit-chart-point${point.month === latestChartMonth ? ' visit-chart-point-current' : ''}`} style={{ animationDelay: `${700 + index * 35}ms` }} cx={point.x} cy={point.y} r="4" fill="var(--map-paper)" stroke="var(--map-ink)" strokeWidth="2"/><text className="visit-chart-count" style={{ animationDelay: `${700 + index * 35}ms` }} x={point.x} y={point.y - 9} textAnchor="middle" fontSize="11" fill="var(--map-ink)">{point.count}</text></>}
             <text x={point.x} y="110" textAnchor="middle" fontSize="12" fill="var(--map-muted)">{point.label}</text>
@@ -260,19 +342,28 @@ export function MapNotebook({ panel, items, restaurant, draft, query, filter, on
       </section>
       <section className="map-memory-card">
         <div className="flex flex-wrap items-center justify-between gap-x-3"><h3 className="map-field-label">가게 기억</h3><Button type="button" variant="ghost" className="map-text-button" onClick={() => { setMemory({ name: restaurant.name, text: restaurantMemoryText(restaurant), tags: restaurant.tags ?? [] }); setError(''); onPanel('memory'); }}>기억 수정</Button></div>
-        <p className="mt-2 whitespace-pre-wrap break-words text-xl font-medium leading-relaxed">{restaurantMemoryText(restaurant) || latest?.reason || '어떤 곳이었는지 한 줄 남겨봐요.'}</p>
-        <p className="mt-4 text-sm leading-6"><VisitSummary visit={latest}/></p>
+        <p className="map-memory-text mt-1 whitespace-pre-wrap break-words">{restaurantMemoryText(restaurant) || latest?.reason || '어떤 곳이었는지 한 줄 남겨봐요.'}</p>
+        <p className="map-memory-summary mt-2 text-sm leading-6"><VisitSummary visit={latest}/></p>
         {latest && !latest.date && <p className="map-muted mt-1 text-xs">기존 기록 · 방문 날짜 미상</p>}
         {!!restaurant.tags?.length && <ul className="mt-4 flex flex-wrap gap-2">{restaurant.tags.map(tag => <li key={tag} className="map-tag">{tag}</li>)}</ul>}
       </section>
       <section>
         <div className="flex flex-wrap items-baseline justify-between gap-2"><h3 className="text-base font-semibold">방문 기록</h3><p className="map-muted text-sm">{datedVisits.length}회{visits.length > datedVisits.length ? ` · 날짜 미상 ${visits.length - datedVisits.length}개` : ''}</p></div>
-        {visits.length ? <ul className="mt-3 divide-y divide-[var(--map-rule)]">{visits.map(v => <li key={v.id} className="py-4">
-          <div className="flex items-center justify-between gap-2"><p className="map-muted text-sm">{v.date ? v.date.replaceAll('-', '.') : '기존 기록 · 날짜 미상'}</p><Button type="button" variant="ghost" className="map-text-button" aria-label={`${v.date || '날짜 미상'} 방문 기록 수정`} onClick={() => onVisit(v)}>수정</Button></div>
+        {visits.length ? <ul className="map-visit-history">{visits.map(v => <li key={v.id} className="map-visit-entry">
+          <div className="flex items-center justify-between gap-2"><p className="map-muted text-sm">{v.date ? v.date.replaceAll('-', '.') : '기존 기록 · 날짜 미상'}</p>{canManageMapVisit(v, currentUserId, sharedMode) && <Button type="button" variant="ghost" className="map-text-button" aria-label={`${v.date || '날짜 미상'} 방문 기록 수정`} onClick={() => onVisit(v)}>수정</Button>}</div>
           <p className="text-sm font-medium leading-6"><VisitSummary visit={v}/></p>
-          {visitNote(v) && <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6">남긴 말 · {visitNote(v)}</p>}
+          {visitNote(v) && <p className="map-visit-note">{visitNote(v)}</p>}
         </li>)}</ul> : <p className="map-muted py-5 text-sm">다녀온 뒤 첫 방문을 남겨주세요.</p>}
       </section>
+      {getOtherMemberMemories(restaurant, currentUserId).length > 0 && <section className="border-t border-[var(--map-rule)] pt-5">
+        <h3 className="text-base font-semibold">다른 멤버의 기록</h3>
+        <ul className="mt-3 divide-y divide-[var(--map-rule)]">{getOtherMemberMemories(restaurant, currentUserId).map(contributor => <li key={contributor.id} className="space-y-2 py-4">
+          <p className="font-semibold">{contributor.nickname}</p>
+          <p className="whitespace-pre-wrap break-words text-sm leading-6">{contributor.memory || '남긴 기억이 없어요.'}</p>
+          {!!contributor.tags.length && <p className="map-muted text-xs">{contributor.tags.join(' · ')}</p>}
+          {!!contributor.visits.length && <ul className="space-y-2 border-l-2 border-[var(--map-sage)] pl-3">{getVisits({ ...restaurant, visits: contributor.visits }).map(contributorVisit => <li key={contributorVisit.id} className="text-sm leading-6"><p className="map-muted">{contributorVisit.date ? contributorVisit.date.replaceAll('-', '.') : '날짜 미상'} · {contributor.nickname}</p><VisitSummary visit={contributorVisit}/>{visitNote(contributorVisit) && <p className="mt-1 whitespace-pre-wrap">{visitNote(contributorVisit)}</p>}</li>)}</ul>}
+        </li>)}</ul>
+      </section>}
     </div>
     <div className="map-footer"><Button type="button" className="map-primary" onClick={() => onVisit()}>{latest ? '방문 기록 추가' : '다녀왔어요 · 첫 방문 기록'}</Button></div>
   </div>;

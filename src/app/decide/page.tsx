@@ -15,6 +15,8 @@ import { BorderBeam } from '@/components/ui/border-beam';
 import { DrawConfetti } from '@/components/ui/draw-confetti';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { AnimatePresence, motion } from 'motion/react';
+import { Effects } from '@animate-ui/react/primitives/effects/effect';
+import { PlusSign } from '@/components/animate-ui/icons/hugeicons/plus-sign';
 import './decide-ticket.css';
 
 type DecideFoodRow = { id: string; name: string; moods: string[]; category: string; icon: string; created_at: string };
@@ -45,11 +47,11 @@ const MOODS: { id: Mood; label: string }[] = [
   { id: 'soup', label: '🍜 국물' },
   { id: 'hearty', label: '🍖 든든' },
 ];
-const MODES: { id: Mode; label: string; description: string }[] = [
-  { id: 'kuji', label: '🎟️ 뽑기', description: '뜯어서 뽑기' },
-  { id: 'battle', label: '🏆 빠른 배틀', description: '둘 중 하나씩' },
-  { id: 'fortune', label: '🥠 음식 운세', description: '오늘의 한마디' },
-  { id: 'random', label: '🎲 개랜덤', description: '누르면 바로 결정' },
+const MODES: { id: Mode; icon: string; label: string; description: string }[] = [
+  { id: 'kuji', icon: '🎟️', label: '뽑기', description: '뜯어서 뽑기' },
+  { id: 'battle', icon: '🏆', label: '빠른 배틀', description: '둘 중 하나씩' },
+  { id: 'fortune', icon: '🥠', label: '음식 운세', description: '오늘의 한마디' },
+  { id: 'random', icon: '🎲', label: '개랜덤', description: '누르면 바로 결정' },
 ];
 const FORTUNES = [
   '오늘은 이 메뉴가 널 선택했어! ✨',
@@ -72,11 +74,11 @@ const randomLightningColors = (): [string, string, string] => {
 
 
 export default function Decide() {
-  const { user, openSignIn } = useAuth();
-  return <DecideSession key={user?.id ?? 'anonymous'} account={user?.id ?? null} openSignIn={openSignIn} />;
+  const { user } = useAuth();
+  return <DecideSession key={user?.id ?? 'anonymous'} account={user?.id ?? null} />;
 }
 
-function DecideSession({ account, openSignIn }: { account: string | null; openSignIn: () => void }) {
+function DecideSession({ account }: { account: string | null }) {
   const [foods, setFoods] = useState<Food[]>(INITIAL);
   const [rows, setRows] = useState<DecideFoodRow[]>([]);
   const [member, setMember] = useState(false);
@@ -90,6 +92,9 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
   const [swipeVersion, setSwipeVersion] = useState(0);
   const [mode, setMode] = useState<Mode>('kuji');
   const [choice, setChoice] = useState('');
+  const [diceRolling, setDiceRolling] = useState(false);
+  const diceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (diceTimer.current) clearTimeout(diceTimer.current); }, []);
   const [fortune, setFortune] = useState('');
   const [excludeRecent, setExcludeRecent] = useState(false);
   const [recentPicks, setRecentPicks] = useState<string[]>([]);
@@ -99,7 +104,14 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
   const [swipeOpenId, setSwipeOpenId] = useState<string | null>(null);
   const [draftCategory, setDraftCategory] = useState<FoodCategory>('한식');
   const [draftIcon, setDraftIcon] = useState('🍚');
-  const [categoryFilter, setCategoryFilter] = useState<FoodCategory | '전체'>('전체');
+  const [selectedCategories, setSelectedCategories] = useState<FoodCategory[]>([]);
+  const toggleCategory = (category: FoodCategory | '전체') => {
+    setSelectedCategories(current => category === '전체' ? [] : current.includes(category) ? current.filter(value => value !== category) : [...current, category]);
+    reset();
+  };
+  const [categoryDrawerOpen, setCategoryDrawerOpen] = useState(false);
+  const drawAreaRef = useRef<HTMLElement | null>(null);
+  const focusDraw = () => requestAnimationFrame(() => drawAreaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   const [menuDrawerOpen, setMenuDrawerOpen] = useState(false);
   const [battle, setBattle] = useState<string[]>([]);
   const [battleStep, setBattleStep] = useState(0);
@@ -217,7 +229,7 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
   };
 
   const visibleFoods = foods.filter((food) => (listCategory === '전체' || food.category === listCategory) && food.name.toLocaleLowerCase().includes(menuSearch.trim().toLocaleLowerCase()));
-  const categoryPool = mode === 'random' || categoryFilter === '전체' ? foods : foods.filter((food) => food.category === categoryFilter);
+  const categoryPool = selectedCategories.length === 0 ? foods : foods.filter(food => selectedCategories.includes(food.category));
   const available = excludeRecent ? categoryPool.filter((food) => !recentPicks.includes(food.name)) : categoryPool;
   const pool = available.length ? available : categoryPool;
   const recentFallback = excludeRecent && available.length === 0 && categoryPool.length > 0;
@@ -228,16 +240,27 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
       return next;
     });
   };
-  const reset = () => { recordedTicket.current = false; tearPosition.current = 0; setChoice(''); setFortune(''); setBattle([]); setBattleStep(0); setTicket(null); setTear(0); setDragging(false); startX.current = null; };
-  const changeMode = (next: Mode) => { setMode(next); reset(); };
+  const reset = () => { if (diceTimer.current) clearTimeout(diceTimer.current); diceTimer.current = null; setDiceRolling(false); recordedTicket.current = false; tearPosition.current = 0; setChoice(''); setFortune(''); setBattle([]); setBattleStep(0); setTicket(null); setTear(0); setDragging(false); startX.current = null; };
+  const changeMode = (next: Mode) => { setMode(next); reset(); focusDraw(); };
 
   const draw = () => {
-    if (!pool.length) return;
+    if (!pool.length || diceRolling) return;
     const options = pool.filter((food) => food.name !== choice);
     const name = pick(options.length ? options : pool).name;
-    setChoice(name);
-    rememberPick(name);
-    setFortune(pick(FORTUNES));
+    if (mode === 'random') {
+      setChoice('');
+      setDiceRolling(true);
+      diceTimer.current = setTimeout(() => {
+        setChoice(name);
+        rememberPick(name);
+        setDiceRolling(false);
+        diceTimer.current = null;
+      }, 850);
+    } else {
+      setChoice(name);
+      rememberPick(name);
+      setFortune(pick(FORTUNES));
+    }
   };
   const openTicket = (number: number) => {
     if (!pool.length) return;
@@ -262,7 +285,7 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
     const width = event.currentTarget.parentElement?.getBoundingClientRect().width || 1;
     const next = Math.max(0, Math.min(100, tearStart.current + (event.clientX - startX.current) / width * 100));
     tearTo(next);
-    const now = performance.now();
+    const now = event.timeStamp;
     // Android: 뜯는 진행도에 맞춰 짧고 뚜렷한 펄스를 점점 촘촘하게 준다.
     const interval = next >= 80 ? 65 : next >= 50 ? 85 : 110;
     const distance = next >= 80 ? 3 : next >= 50 ? 4 : 5;
@@ -348,47 +371,51 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
   const primary = 'min-h-12 rounded-2xl bg-[#4D5B3C] px-5 font-bold text-[#EFE6D4] disabled:cursor-not-allowed disabled:opacity-40';
 
   return <Shell tone="editorial">
-    <main className="min-w-0 space-y-5 pb-12 text-[#4D5B3C]">
-      <header className="rounded-3xl bg-[#EFE6D4] p-5 sm:p-7">
-        <p className="text-sm font-semibold opacity-70">고민 해결 연구소</p>
-        <h1 className="mt-1 text-2xl font-black sm:text-3xl">오늘 뭐 먹지? 🍽️</h1>
-        <p className="mt-2 text-sm opacity-75">메뉴는 등록해두고, 결정은 운명에 맡겨봐!</p>
-      </header>
+    <main className="min-w-0 space-y-3 pb-12 text-[#4D5B3C]">
 
-      <section className="rounded-2xl border border-[#D9D8B8] bg-white p-4 text-sm">
-        <p className="font-bold">☁️ 공유 메뉴 후보 {member ? '연결됨' : '로그인 필요'}</p>
-        {!decideDb ? <p>Supabase 환경변수 설정이 필요해.</p> :
-          !account ? <div className="mt-2 space-y-2"><p>공유 후보를 쓰려면 먼저 로그인해 줘.</p><button type="button" onClick={openSignIn} className="min-h-10 rounded-lg bg-[#4D5B3C] px-4 text-white">로그인</button></div> :
-          <div className="mt-2 space-y-2">
-            <p>{member ? '모두가 같은 후보를 사용해.' : '로그인됐어. 멤버 승인 후 공유 후보를 사용할 수 있어.'}</p>
-            <div className="flex flex-wrap gap-2">
-              {member && <><button type="button" onClick={() => void reloadFoods()} className="rounded-lg border px-3 py-2">새로고침</button>
-                <button type="button" disabled={syncBusy} onClick={() => void importLocalFoods()} className="rounded-lg border px-3 py-2">기존 후보 가져오기</button></>}
-            </div>
-          </div>}
-        {syncError && <p role="status" className="mt-2 break-words text-xs">{syncError}</p>}
+      {syncError && <p role="status" className="rounded-xl bg-[#EFE6D4] px-3 py-2 text-sm">{syncError}</p>}
+      <section aria-label="랜덤뽑기 음식 분류" className="flex items-center gap-2">
+        <button type="button" onClick={() => setCategoryDrawerOpen(true)} className="flex min-h-12 min-w-0 flex-1 items-center gap-3 rounded-2xl bg-[#4D5B3C] px-4 text-left text-[#FFFCF2] shadow-sm transition-colors hover:bg-[#3E4B30] active:scale-[0.98]" aria-label="메뉴 분류 도감 열기">
+          <span className="text-xl" aria-hidden="true">📚</span>
+          <span className="min-w-0 flex-1 text-sm font-bold">메뉴 도감</span>
+          <span className="text-xs font-semibold text-[#E8E4D4]">선택하기 <span aria-hidden="true">›</span></span>
+        </button>
+        <button type="button" onClick={() => setMenuDrawerOpen(true)} aria-label="메뉴 후보 관리" title="메뉴 후보 관리" className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[#D9D8B8] bg-[#EFE6D4] text-[#4D5B3C] transition-colors hover:bg-[#D9D8B8] active:scale-95"><PlusSign size={18} animateOnHover /></button>
       </section>
-      <section aria-label="랜덤뽑기 음식 분류" className="rounded-2xl border border-[#D9D8B8] bg-white p-4">
-        <p className="mb-3 text-sm font-bold">어떤 메뉴를 뽑을까?</p>
-        <div className="flex flex-wrap gap-2">
-          {(['전체', ...foodCategories] as const).map((category) => (
-            <button key={category} type="button" onClick={() => { setCategoryFilter(category); reset(); }}
-              aria-pressed={categoryFilter === category}
-              className={`rounded-xl border px-3 py-2 text-sm transition-colors ${categoryFilter === category ? 'border-[#4D5B3C] bg-[#4D5B3C] text-white' : 'border-[#D9D8B8] bg-[#EFE6D4]'}`}>
-              {category === '전체' ? '🎲 전체' : `${CATEGORY_EMOJI[category]} ${category}`}
-              <span className="ml-1 opacity-70">{category === '전체' ? foods.length : foods.filter((item) => item.category === category).length}</span>
-            </button>
-          ))}
+      {excludeRecent && recentFallback && <p className="text-xs text-[#B4534B]">남은 후보가 없어서 최근 메뉴도 포함했어.</p>}
+      <DepthDrawer open={categoryDrawerOpen} depth={1} onClose={() => setCategoryDrawerOpen(false)}>
+        <DrawerHeader className="flex shrink-0 flex-row items-center justify-between border-b border-[#D9D8B8] px-5 py-4 text-left">
+          <DrawerTitle className="text-lg font-black text-[#4D5B3C]">오늘의 메뉴 도감</DrawerTitle>
+          <button type="button" aria-label="닫기" onClick={() => setCategoryDrawerOpen(false)} className="flex size-10 items-center justify-center rounded-full bg-[#EFE6D4] text-[#4D5B3C]"><X size={19}/></button>
+        </DrawerHeader>
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 pb-[calc(env(safe-area-inset-bottom)+24px)] text-[#4D5B3C]">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <Effects asChild fade slide={{ direction: 'up', offset: 14 }} zoom={{ initialScale: 0.94 }} holdDelay={65}>
+            {(['전체', ...foodCategories] as const).map((category, index) => {
+              const selected = category === '전체' ? selectedCategories.length === 0 : selectedCategories.includes(category);
+              const count = category === '전체' ? foods.length : foods.filter(food => food.category === category).length;
+              return <button key={category} type="button" aria-pressed={selected} onClick={() => toggleCategory(category)} className={`relative flex min-h-36 flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border-2 px-3 py-5 text-center transition-transform active:scale-95 ${selected ? 'border-[#4D5B3C] bg-[#D9D8B8] shadow-sm' : 'border-[#DDD5BD] bg-[#FFFCF2] shadow-sm'}`}>
+                <span className="absolute left-3 top-2 text-[10px] font-black tracking-widest opacity-45">NO.{String(index + 1).padStart(2, '0')}</span>
+                {selected && <span className="absolute right-3 top-2 text-xs font-black">✓</span>}
+                <span className="text-5xl drop-shadow-sm" aria-hidden="true">{category === '전체' ? '🎲' : CATEGORY_EMOJI[category]}</span>
+                <strong className="text-base font-black">{category === '전체' ? '전체 메뉴' : category}</strong>
+                <span className="rounded-full bg-white/75 px-2 py-0.5 text-xs font-semibold">{count}개 발견</span>
+              </button>;
+            })}
+            </Effects>
+          </div>
+          <label className="mt-5 flex min-h-12 items-center justify-between rounded-xl border border-[#D9D8B8] bg-white px-4 text-sm font-semibold"><span>최근 뽑힌 메뉴 {RECENT_LIMIT}개 제외</span><input type="checkbox" checked={excludeRecent} onChange={(event) => { setExcludeRecent(event.target.checked); reset(); }} className="size-5 accent-[#4D5B3C]" /></label>
         </div>
-        <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={excludeRecent} onChange={(event) => { setExcludeRecent(event.target.checked); reset(); }} className="size-4 accent-[#4D5B3C]"/> 최근 뽑힌 메뉴 {RECENT_LIMIT}개 제외</label>
-        {excludeRecent && recentFallback && <p className="mt-2 text-xs text-[#B4534B]">남은 후보가 없어서 최근 메뉴도 포함했어.</p>}
-      </section>
+        <div className="shrink-0 border-t border-[#D9D8B8] bg-[#f7f5ef] px-5 py-3 pb-[calc(env(safe-area-inset-bottom)+12px)]">
+          <button type="button" onClick={() => setCategoryDrawerOpen(false)} className="min-h-12 w-full rounded-xl bg-[#4D5B3C] font-bold text-white">선택 완료</button>
+        </div>
+      </DepthDrawer>
       <section aria-label="뽑기 방식" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {MODES.map((item) => <button key={item.id} type="button" aria-pressed={mode === item.id}
           onClick={() => changeMode(item.id)}
-          className={`min-w-0 rounded-2xl border p-3 text-center transition-colors ${mode === item.id ? 'border-[#4D5B3C] bg-[#D9D8B8]' : 'border-[#D9D8B8] bg-white'}`}>
-          <span className="block text-sm font-bold sm:text-base">{item.label}</span>
-          <span className="mt-1 hidden text-xs opacity-70 sm:block">{item.description}</span>
+          className={`grid min-h-12 min-w-0 grid-cols-[24px_minmax(0,1fr)] items-center gap-2 rounded-xl border px-3 py-2 transition-colors ${mode === item.id ? 'border-[#4D5B3C] bg-[#D9D8B8]' : 'border-[#D9D8B8] bg-white'}`}>
+          <span className="flex w-6 shrink-0 items-center justify-center text-lg leading-none" aria-hidden="true">{item.icon}</span>
+          <span className="min-w-0 text-left text-sm font-bold leading-tight sm:text-base">{item.label}</span>
         </button>)}
       </section>
 
@@ -396,13 +423,13 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
         <p className="font-semibold">{ticket === null ? '마음에 드는 뽑기권을 한 장 골라봐!' : `NO. ${String(ticket).padStart(2, '0')} · ${tear === 100 ? '당첨!' : '절취선을 오른쪽으로 밀어 뜯어봐!'}`}</p>
         <p className="mt-1 text-xs opacity-70">종이 뽑기 · 후보 {pool.length}개</p>
       </div>}
-      <section aria-label="메뉴 추천 결과" className={`rounded-3xl text-center ${mode === 'kuji' ? 'bg-transparent p-0' : 'bg-[#EFE6D4] p-5 sm:p-8'}`}>
+      <section ref={drawAreaRef} aria-label="메뉴 추천 결과" className={`scroll-mt-24 rounded-3xl text-center ${mode === 'kuji' ? 'bg-transparent p-0' : 'bg-[#EFE6D4] p-5 sm:p-8'}`}>
         {mode !== 'kuji' && <p className="text-sm opacity-70">{mode === 'battle' ? '취향 대결' : mode === 'fortune' ? '오늘의 음식 운세' : '완전 무작위'} · 후보 {pool.length}개</p>}
         {mode === 'kuji' ? <div className="py-3">
           {ticket === null ? <>
             <div className="mx-auto grid max-w-xl grid-cols-3 gap-3 sm:gap-5">
               {Array.from({ length: 6 }, (_, index) => <button key={index} type="button" disabled={!pool.length}
-                onClick={() => openTicket(index + 1)}
+                onClick={() => { openTicket(index + 1); focusDraw(); }}
                 className="paper-ticket relative flex aspect-[4/5] min-w-0 flex-col items-center justify-between overflow-hidden rounded-[3px] border border-[#B9AD8C] px-2 py-3 shadow-[1px_2px_0_#C8BDA0,3px_5px_9px_#4D5B3C20] transition-transform hover:-translate-y-1 hover:rotate-[-1deg] active:scale-95 disabled:opacity-40">
                 <span className="text-[9px] font-bold tracking-[0.2em] sm:text-[10px]">MENU LOTTERY</span>
                 <span className="flex size-12 items-center justify-center rounded-full border border-[#4D5B3C]/20 text-4xl font-black text-[#4D5B3C]/80">?</span>
@@ -413,7 +440,7 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
             <Floating3DParticles quantity={260} color="#AB8240" size={3.5} opacity={0.65} drift={0.28} depth={0.55} className="z-0" />
             <DrawConfetti />
             <motion.div key={`result-${ticket}-${choice}`} initial={{ opacity: 0, y: 45, scale: 0.78, rotate: -5 }} animate={{ opacity: 1, y: 0, scale: 1, rotate: 0 }} transition={{ type: "spring", stiffness: 245, damping: 17, delay: 0.1 }} className="relative z-10 w-full max-w-sm rounded-2xl border border-[#4D5B3C]/30 bg-[#FFFCF2] px-6 py-8 shadow-[0_20px_55px_#343B2C45] sm:px-8">
-              <div className="mb-6 flex items-center justify-between border-b border-dashed border-[#B8B69D] pb-3 text-[11px] font-bold tracking-[0.2em] text-[#76805C]"><span>MUMUKG DRAW</span><span>NO. {String(ticket).padStart(2, "0")}</span></div>
+              <div className="mb-6 flex items-center justify-between border-b border-dashed border-[#B8B69D] pb-3 text-[11px] font-bold tracking-[0.2em] text-[#76805C]"><span>머먹쥐 DRAW</span><span>NO. {String(ticket).padStart(2, "0")}</span></div>
               <div className="text-center"><span className="text-5xl" aria-hidden="true">{foods.find((food) => food.name === choice)?.icon ?? "🍽️"}</span><p className="mt-4 text-xs font-semibold tracking-widest opacity-60">오늘의 당첨 메뉴</p><strong className="mt-2 block break-keep text-3xl font-black sm:text-4xl">{choice}</strong><p className="mt-4 text-sm opacity-75">오늘은 이걸로 결정! ✨</p></div>
               <div className="mt-7 border-t border-dashed border-[#B8B69D] pt-3 text-center text-[10px] font-semibold tracking-widest opacity-50">YOUR LUCKY PICK</div>
               <BorderBeam size={85} duration={5} colorFrom="#E6B65C" colorTo="#82985A" borderWidth={2} />
@@ -429,7 +456,7 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
               <div className="absolute inset-0 flex flex-col items-center justify-center px-5" aria-live="polite">
                 <span className="sr-only">절취 부분을 밀어 메뉴를 확인해 봐.</span>
               </div>
-              <div className="pointer-events-none absolute inset-x-5 top-4 z-[1] border-b border-dotted border-[#B6B19B] pb-2 text-[10px] font-bold tracking-[0.2em] text-[#6D654E]">MUMUKG · PAPER DRAW</div>
+              <div className="pointer-events-none absolute inset-x-5 top-4 z-[1] border-b border-dotted border-[#B6B19B] pb-2 text-[10px] font-bold tracking-[0.2em] text-[#6D654E]">머먹쥐 · PAPER DRAW</div>
               <div className="pointer-events-none absolute inset-x-5 bottom-4 z-[1] border-t border-dotted border-[#B6B19B] pt-2 text-[10px] font-bold tracking-widest text-[#6D654E]">NO. {String(ticket).padStart(2, '0')} · LUCKY TICKET</div>
               <div className="absolute inset-x-3 top-[27%] bottom-[27%] border-y border-dashed border-[#A39779]/65 bg-[#E7DDC7]/55 shadow-[inset_0_2px_5px_#6F593519]" aria-hidden="true">
                 <span className="flex h-full items-center justify-center text-sm font-bold tracking-widest text-[#75694E]">✦ OPEN ✦</span>
@@ -475,13 +502,13 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
             </div>
           </> :
           <div className="flex min-h-48 flex-col items-center justify-center gap-3 py-5" aria-live="polite">
-            <span className="text-5xl" aria-hidden="true">{mode === 'fortune' ? '🥠' : mode === 'random' ? '🎲' : '🏆'}</span>
-            <h2 className="break-keep text-2xl font-black sm:text-3xl">{choice || (mode === 'battle' ? '오늘의 승자는?' : '오늘 뭘 먹을까?')}</h2>
+            {mode === 'random' ? <motion.span key={diceRolling ? 'rolling' : 'idle'} className="inline-block text-6xl" aria-hidden="true" animate={diceRolling ? { rotate: [0, 100, 210, 330, 455, 540, 690, 720], scale: [1, 1.25, 0.9, 1.2, 1] } : { rotate: 0, scale: 1 }} transition={{ duration: 0.85, ease: 'easeInOut' }}>🎲</motion.span> : <span className="text-5xl" aria-hidden="true">{mode === 'fortune' ? '🥠' : '🏆'}</span>}
+            <h2 className="break-keep text-2xl font-black sm:text-3xl">{diceRolling ? '주사위 굴리는 중…' : choice || (mode === 'battle' ? '오늘의 승자는?' : '오늘 뭘 먹을까?')}</h2>
             {choice && mode !== 'random' && <p className="text-sm">{mode === 'fortune' ? fortune : '오늘은 이걸로 결정! ✨'}</p>}
           </div>}
         {pool.length === 0 && <p className="mb-4 text-sm text-[#B4534B]">이 조건에 맞는 메뉴가 없어. 필터를 바꾸거나 메뉴를 추가해줘.</p>}
         {(mode === 'random' || mode === 'fortune' || (mode === 'battle' && (Boolean(choice) || battle.length < 2))) &&
-          <button type="button" disabled={pool.length < (mode === 'battle' ? 2 : 1)}
+          <button type="button" disabled={diceRolling || pool.length < (mode === 'battle' ? 2 : 1)}
             onClick={mode === 'battle' ? startBattle : draw} className={primary + ' w-full'}>
             {mode === 'battle' ? (choice ? '🏆 다시 대결하기' : '🏆 배틀 시작하기') : mode === 'random' ? (choice ? '🎲 또 뽑기' : '🎲 개랜덤 뽑기') : choice ? '🥠 다시 뽑기' : '🥠 오늘의 운세 열기'}
           </button>}
@@ -495,11 +522,6 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
       </div>}
 
       {choice && (mode !== 'kuji' || tear === 100) && <div className="mx-auto mt-3 max-w-md px-1"><button type="button" onClick={() => void shareResult()} className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#4D5B3C] bg-[#FBF8F0] text-sm font-bold text-[#4D5B3C]"><Share2 size={16}/>결과 공유하기</button></div>}
-      {!menuDrawerOpen && <button type="button" onClick={() => setMenuDrawerOpen(true)}
-        aria-label="메뉴 후보 관리 열기" title="메뉴 후보 관리"
-        className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-40 flex size-12 items-center justify-center rounded-full border border-[#4D5B3C] bg-[#4D5B3C] text-[#EFE6D4] shadow-lg transition-transform active:scale-95">
-        <Plus size={22} strokeWidth={2.25} aria-hidden="true" />
-      </button>}
       <DepthDrawer open={menuDrawerOpen} depth={1} onClose={() => { if (formOpen) { cancelEdit(); setFormOpen(false); } else setMenuDrawerOpen(false); }}>
         <DrawerHeader className="flex shrink-0 flex-row items-center justify-between gap-3 border-b border-[#D9D8B8] px-5 py-4 pt-[calc(env(safe-area-inset-top)+0.85rem)] text-left">
           <div className="min-w-0">
@@ -537,6 +559,7 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
             </label>
             <div className="flex gap-2"><button type="button" onClick={() => { cancelEdit(); setFormOpen(false); }} className="min-h-12 rounded-2xl border border-[#D9D8B8] px-4 font-semibold">취소</button><button type="submit" disabled={!member || syncBusy || !draft.trim() || foods.some((food) => food.name.toLocaleLowerCase() === draft.trim().toLocaleLowerCase() && rows.find((row) => row.name === food.name)?.id !== editingId)} className={primary + ' flex-1'}>{editingId ? '수정 저장' : '+ 후보 등록'}</button></div>
           </form> : <>
+          {member && localBackup.length > 0 && <button type="button" disabled={syncBusy} onClick={() => void importLocalFoods()} className="min-h-10 rounded-xl border border-[#D9D8B8] px-3 text-sm">기존 로컬 후보 가져오기</button>}
           <button type="button" onClick={() => { cancelEdit(); setDraftCategory("한식"); setDraftIcon("🍚"); setFormOpen(true); }} className="flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#4D5B3C] px-4 font-bold text-white"><Plus size={18}/> 새 메뉴 추가</button>
           <div className="flex shrink-0 items-center gap-2">
             <Search size={17} aria-hidden="true"/>
