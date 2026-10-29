@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 export interface ElectricBorderProps {
   children?: ReactNode;
   color?: string;
+  colors?: [string, string, string];
   glowColor?: string;
   speed?: number;
   chaos?: number;
@@ -29,6 +30,8 @@ export interface ElectricBorderProps {
 interface Settings {
   core: number[];
   glowColor: number[];
+  palette: number[];
+  multicolor: boolean;
   speed: number;
   chaos: number;
   spread: number;
@@ -113,6 +116,8 @@ uniform float uHoverRadius;
 uniform vec4 uPulses[${PULSES}];
 uniform vec3 uCore;
 uniform vec3 uGlowColor;
+uniform vec3 uPalette[3];
+uniform float uMulticolor;
 uniform float uIntensity;
 uniform float uGlow;
 uniform float uThickness;
@@ -317,6 +322,13 @@ void main() {
   for (int i = 0; i < ${ARCS}; i++) addArc(p, uArcEnds[i], uArcShape[i], t, light, energy, hot);
 
   float breath = 1.0 + uFlicker * 0.5 * wobble(t * 4.6 + 7.0, 3u);
+  if (uMulticolor > 0.5) {
+    float phase = mod(s / max(uPerimeter, 1.0) * 3.0 + t * 0.17, 3.0);
+    vec3 tint = phase < 1.0 ? mix(uPalette[0], uPalette[1], smoothstep(0.0, 1.0, phase))
+      : phase < 2.0 ? mix(uPalette[1], uPalette[2], smoothstep(1.0, 2.0, phase))
+      : mix(uPalette[2], uPalette[0], smoothstep(2.0, 3.0, phase));
+    light = mix(light, energy * tint, 0.9);
+  }
   float gain = uIntensity * breath * (1.0 + heat * 0.25) * 1.4;
   light *= frameFade;
   energy *= frameFade;
@@ -464,6 +476,7 @@ const nearestOn = (path: BorderPath, x: number, y: number) => {
 const ElectricBorder = ({
   children,
   color = '#7df9ff',
+  colors,
   glowColor,
   speed = 1,
   chaos = 0.5,
@@ -493,6 +506,8 @@ const ElectricBorder = ({
   const settings: Settings = {
     core: base.map(channel => channel + (1 - channel) * 0.55),
     glowColor: glowColor ? parseColor(glowColor) : base,
+    palette: (colors ?? [color, color, color]).flatMap(parseColor),
+    multicolor: Boolean(colors),
     speed: Math.max(0, speed),
     chaos: clamp(chaos, 0, 2),
     spread: clamp(spread, 0, 2),
@@ -635,6 +650,8 @@ const ElectricBorder = ({
       gl.uniform4fv(u.uPulses, pulseData);
       gl.uniform3fv(u.uCore, s.core);
       gl.uniform3fv(u.uGlowColor, s.glowColor);
+      gl.uniform3fv(u.uPalette, s.palette);
+      gl.uniform1f(u.uMulticolor, s.multicolor ? 1 : 0);
       gl.uniform1f(u.uIntensity, s.intensity);
       gl.uniform1f(u.uGlow, s.glow);
       gl.uniform1f(u.uThickness, s.thickness);

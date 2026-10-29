@@ -1,3 +1,5 @@
+import { AuthControl } from './auth/auth-control';
+
 type PageHeaderProps = {
   title: string;
   description?: string;
@@ -13,6 +15,7 @@ export function PageHeader({ title, description, className = '' }: PageHeaderPro
           <h1 className="mt-0.5 truncate text-xl font-bold tracking-tight text-[#3f4b32]">{title}</h1>
           {description && <p className="mt-1 text-sm text-[#747665]">{description}</p>}
         </div>
+        <AuthControl />
       </div>
     </header>
   );

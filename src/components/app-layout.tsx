@@ -3,6 +3,7 @@ import { usePathname } from 'next/navigation';
 import { PageHeader } from './page-header';
 import { TabNav } from './tab-nav';
 import { ToastProvider } from './ui/toast';
+import { AuthProvider } from './auth/auth-provider';
 
 const pages: Record<string, { title: string; description?: string }> = {
   '/': { title: '맛나보임' },
@@ -17,14 +18,17 @@ const pages: Record<string, { title: string; description?: string }> = {
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const page = pages[pathname] ?? pages['/'];
+  const isEntryRoute = pathname === '/splash' || pathname === '/login' || pathname.startsWith('/auth/');
 
   return (
-    <ToastProvider>
-    <div className="min-h-dvh bg-white">
-      <PageHeader title={page.title} description={page.description} className="sticky top-0 z-40 shadow-sm"/>
-      {children}
-      <TabNav/>
-    </div>
-    </ToastProvider>
+    <AuthProvider>
+      {isEntryRoute ? children : <ToastProvider>
+        <div className="min-h-dvh bg-white">
+          <PageHeader title={page.title} description={page.description} className="sticky top-0 z-40 shadow-sm" />
+          {children}
+          <TabNav />
+        </div>
+      </ToastProvider>}
+    </AuthProvider>
   );
 }
