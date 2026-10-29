@@ -203,7 +203,9 @@ export default function Decide() {
     startX.current = null;
     setDragging(false);
     if ('vibrate' in navigator) navigator.vibrate(0);
-    setTear((value) => value >= 78 ? 100 : value);
+    // 끝까지 뜯지 못하고 손을 놓으면 절취선을 시작 지점으로 되돌린다.
+    setTear((value) => value >= 78 ? 100 : 0);
+    lastTearPosition.current = 0;
   };
 
   const startBattle = () => {
