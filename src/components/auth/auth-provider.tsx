@@ -70,7 +70,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'kakao',
-        options: { redirectTo: callback.toString() },
+        options: {
+          redirectTo: callback.toString(),
+          // Kakao's Supabase defaults include email; `scopes` only appends to them.
+          queryParams: { scope: 'profile_nickname profile_image' },
+        },
       });
       if (error) signInPending.current = false;
       return error?.message ?? null;
