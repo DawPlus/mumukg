@@ -1,15 +1,16 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/components/auth/auth-provider';
 import { foodCategories, normalizeFoodCategory, type FoodCategory } from '@/lib/food-categories';
 import { Shell } from '@/components/shell';
-import { Plus, X, Pencil, Trash2 } from 'lucide-react';
+import { Plus, X, Pencil, Trash2, Search, ChevronDown } from 'lucide-react';
 import SwipeRow, { type SwipeAction } from '@/components/SwipeRow';
 import { DepthDrawer } from '@/components/ui/depth-drawer';
 import { DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import ElectricBorder from '@/components/ElectricBorder';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { AnimatePresence, motion } from 'motion/react';
 
 type DecideFoodRow = { id: string; name: string; moods: string[]; category: string; icon: string; created_at: string };
@@ -73,7 +74,12 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
   const [member, setMember] = useState(false);
   const [syncError, setSyncError] = useState('');
   const [syncBusy, setSyncBusy] = useState(false);
-  const [loaded, setLoaded] = useState(false);
+  const [localBackup, setLocalBackup] = useState<Food[]>([]);
+  const [formOpen, setFormOpen] = useState(false);
+  const [menuSearch, setMenuSearch] = useState('');
+  const [listCategory, setListCategory] = useState<FoodCategory | '전체'>('전체');
+  const [pendingDelete, setPendingDelete] = useState<Food | null>(null);
+  const [swipeVersion, setSwipeVersion] = useState(0);
   const [mode, setMode] = useState<Mode>('kuji');
   const [choice, setChoice] = useState('');
   const [fortune, setFortune] = useState('');
@@ -92,6 +98,7 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
   const [dragging, setDragging] = useState(false);
   const startX = useRef<number | null>(null);
   const tearStart = useRef(0);
+  const tearPosition = useRef(0);
   const lastVibration = useRef(0);
   const lastTearPosition = useRef(0);
   const vibrate = (pattern: number | number[]) => {
@@ -106,15 +113,14 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
         if (Array.isArray(parsed) && parsed.every((food) =>
           food && typeof food.name === 'string' && food.name.length <= 30 &&
           Array.isArray(food.moods) && food.moods.every((mood: unknown) => MOODS.some((m) => m.id === mood))
-        )) queueMicrotask(() => setFoods((parsed as Array<{ name: string; moods: Mood[]; category?: string }>).map(normalizeFood)));
+        )) {
+          const backup = (parsed as Array<{ name: string; moods: Mood[]; category?: string; icon?: string }>).map(normalizeFood);
+          queueMicrotask(() => { setLocalBackup(backup); setFoods(backup); });
+        }
       }
     } catch { /* 저장 데이터가 손상되면 기본 후보 사용 */ }
-    queueMicrotask(() => setLoaded(true));
   }, []);
-
-  useEffect(() => {
-    if (loaded && !member) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(foods));
-  }, [foods, loaded, member]);
+  // Preserve legacy localStorage as read-only backup; remote data must never overwrite it.
 
   useEffect(() => {
     const db = decideDb;
@@ -139,7 +145,7 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
     return () => { disposed = true; };
   }, [account]);
 
-  const reloadFoods = async () => {
+  const reloadFoods = useCallback(async () => {
     if (!decideDb) return;
     const { data, error } = await decideDb.from('decide_foods')
       .select('id,name,moods,category,icon,created_at').order('created_at', { ascending: true });
@@ -147,19 +153,29 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
     setRows((data ?? []) as DecideFoodRow[]);
     setFoods((data ?? []).map(({ name, moods, category, icon }) => normalizeFood({ name, moods: moods as Mood[], category, icon })));
     setSyncError('');
-  };
+  }, []);
+  useEffect(() => {
+    if (!member || !account || !decideDb) return;
+    const db = decideDb;
+    const channel = db.channel(`decide-foods-${account}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'decide_foods' }, () => { void reloadFoods(); })
+      .subscribe();
+    const refresh = () => { if (document.visibilityState === 'visible') void reloadFoods(); };
+    document.addEventListener('visibilitychange', refresh);
+    window.addEventListener('focus', refresh);
+    return () => { document.removeEventListener('visibilitychange', refresh); window.removeEventListener('focus', refresh); void db.removeChannel(channel); };
+  }, [account, member, reloadFoods]);
   const importLocalFoods = async () => {
     if (!decideDb || !member) return;
     setSyncBusy(true);
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      const parsed: unknown = raw ? JSON.parse(raw) : [];
-      if (!Array.isArray(parsed)) throw new Error('로컬 후보 데이터를 읽을 수 없어.');
-      const names = new Set(rows.map((row) => row.name.toLocaleLowerCase()));
-      const toImport = (parsed as Food[]).filter((food) =>
-        typeof food.name === 'string' && food.name.trim().length <= 30 &&
-        !names.has(food.name.trim().toLocaleLowerCase())
-      ).map((food) => ({ name: food.name.trim(), moods: Array.isArray(food.moods) ? food.moods : [], category: normalizeFoodCategory(food.category ?? INITIAL_CATEGORIES[food.name]), icon: typeof food.icon === 'string' && food.icon ? food.icon : CATEGORY_EMOJI[normalizeFoodCategory(food.category)], created_by: account }));
+      const names = new Set(rows.map((row) => row.name.trim().toLocaleLowerCase()));
+      const toImport = localBackup.filter((food) => {
+        const key = food.name.trim().toLocaleLowerCase();
+        if (!key || key.length > 30 || names.has(key)) return false;
+        names.add(key);
+        return true;
+      }).map((food) => ({ name: food.name.trim(), moods: food.moods, category: food.category, icon: food.icon, created_by: account }));
       if (toImport.length) {
         const { error } = await decideDb.from('decide_foods').insert(toImport);
         if (error) throw error;
@@ -170,8 +186,9 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
     setSyncBusy(false);
   };
 
+  const visibleFoods = foods.filter((food) => (listCategory === '전체' || food.category === listCategory) && food.name.toLocaleLowerCase().includes(menuSearch.trim().toLocaleLowerCase()));
   const pool = categoryFilter === '전체' ? foods : foods.filter((food) => food.category === categoryFilter);
-  const reset = () => { setChoice(''); setFortune(''); setBattle([]); setBattleStep(0); setTicket(null); setTear(0); setDragging(false); startX.current = null; };
+  const reset = () => { tearPosition.current = 0; setChoice(''); setFortune(''); setBattle([]); setBattleStep(0); setTicket(null); setTear(0); setDragging(false); startX.current = null; };
   const changeMode = (next: Mode) => { setMode(next); reset(); };
 
   const draw = () => {
@@ -186,11 +203,11 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
     setChoice(pick(options.length ? options : pool).name);
     setTicket(number);
     setLightningColors(randomLightningColors());
-    setTear(0);
+    tearTo(0);
     setDragging(false);
     lastTearPosition.current = 0;
   };
-  const tearTo = (value: number) => setTear(Math.max(0, Math.min(100, value)));
+  const tearTo = (value: number) => { const next = Math.max(0, Math.min(100, value)); tearPosition.current = next; setTear(next); };
   const moveTear = (event: React.PointerEvent<HTMLDivElement>) => {
     if (startX.current === null) return;
     const width = event.currentTarget.parentElement?.getBoundingClientRect().width || 1;
@@ -212,11 +229,11 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
     setDragging(false);
     vibrate(0);
     // 95% 이상에서만 개봉. 중단하면 처음부터 다시 뜯도록 되돌린다.
-    if (tear >= 95) {
-      setTear(100);
+    if (tearPosition.current >= 95) {
+      tearTo(100);
       vibrate([42, 35, 65]);
     } else {
-      setTear(0);
+      tearTo(0);
     }
     lastTearPosition.current = 0;
   };
@@ -233,6 +250,12 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
     if (battleStep === 0) { setBattle((items) => [items[2], items[3], name].filter(Boolean)); setBattleStep(1); }
     else { setBattle((items) => [items[2], name].filter(Boolean)); setBattleStep(2); }
   };
+  const requestDelete = (food: Food) => {
+    setSwipeOpenId(null);
+    setSwipeVersion((version) => version + 1);
+    if (!member) { setSyncError('삭제하려면 멤버 승인이 필요해.'); return; }
+    setPendingDelete(food);
+  };
   const startEdit = (food: Food) => {
     const row = rows.find((item) => item.name === food.name);
     if (!member || !row) { setSyncError('메뉴 수정은 로그인 및 멤버 승인 후 사용할 수 있어.'); return; }
@@ -242,6 +265,7 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
     setDraftCategory(food.category);
     setDraftIcon(food.icon);
     setSwipeOpenId(null);
+    setFormOpen(true);
   };
   const cancelEdit = () => { setEditingId(null); setDraft(''); setSwipeOpenId(null); };
   const add = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -255,7 +279,7 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
       ? await decideDb.from('decide_foods').update(payload).eq('id', editingId)
       : await decideDb.from('decide_foods').insert({ ...payload, moods: [], created_by: account });
     if (error) setSyncError(error.message);
-    else { await reloadFoods(); cancelEdit(); reset(); }
+    else { await reloadFoods(); cancelEdit(); setFormOpen(false); reset(); }
     setSyncBusy(false);
   };
   const remove = async (name: string) => {
@@ -266,6 +290,7 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
     const { error } = await decideDb.from('decide_foods').delete().eq('id', row.id);
     if (error) setSyncError(error.message);
     else { await reloadFoods(); setSwipeOpenId(null); reset(); }
+    setPendingDelete(null);
     setSyncBusy(false);
   };
 
@@ -419,7 +444,10 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
           </button>
         </DrawerHeader>
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-5 py-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-[#4D5B3C]">
-          <form onSubmit={add} className="shrink-0 space-y-3 rounded-2xl border border-[#D9D8B8] bg-[#EFE6D4]/60 p-3">
+          <button type="button" onClick={() => { if (formOpen && editingId) cancelEdit(); setFormOpen(!formOpen); }} aria-expanded={formOpen} className="flex min-h-11 shrink-0 items-center justify-between rounded-xl bg-[#EFE6D4] px-4 text-sm font-bold">
+            {editingId ? '메뉴 수정' : '새 메뉴 등록'} <ChevronDown size={18} className={formOpen ? 'rotate-180' : ''}/>
+          </button>
+          {formOpen && <form onSubmit={add} className="max-h-[48dvh] shrink-0 space-y-3 overflow-y-auto rounded-xl border border-[#D9D8B8] bg-[#EFE6D4]/60 p-3">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2">
               <label className="min-w-0 text-xs font-semibold">분류
                 <select aria-label="메뉴 분류" value={draftCategory}
@@ -443,12 +471,20 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
                 placeholder="예: 부대찌개" className="mt-1 min-h-12 w-full rounded-xl border border-[#D9D8B8] bg-white px-4 text-base outline-offset-2" />
             </label>
             <div className="flex gap-2">{editingId && <button type="button" onClick={cancelEdit} className="min-h-12 rounded-2xl border border-[#D9D8B8] px-4 font-semibold">취소</button>}<button type="submit" disabled={!member || syncBusy || !draft.trim() || foods.some((food) => food.name.toLocaleLowerCase() === draft.trim().toLocaleLowerCase() && rows.find((row) => row.name === food.name)?.id !== editingId)} className={primary + ' flex-1'}>{editingId ? '수정 저장' : '+ 후보 등록'}</button></div>
-          </form>
+          </form>}
+          <div className="flex shrink-0 items-center gap-2">
+            <Search size={17} aria-hidden="true"/>
+            <input type="search" aria-label="메뉴 검색" placeholder="메뉴 검색" value={menuSearch} onChange={(event) => setMenuSearch(event.target.value)} className="min-h-10 min-w-0 flex-1 rounded-lg border border-[#D9D8B8] px-3 text-sm"/>
+            <select aria-label="목록 분류" value={listCategory} onChange={(event) => setListCategory(event.target.value as FoodCategory | '전체')} className="min-h-10 rounded-lg border border-[#D9D8B8] bg-white px-2 text-sm">
+              <option value="전체">전체</option>
+              {foodCategories.map((category) => <option key={category} value={category}>{category}</option>)}
+            </select>
+          </div>
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2">
             <p className="py-2 text-xs opacity-70">왼쪽으로 밀면 수정·삭제 · 끝까지 밀면 삭제</p>
             <div className="overflow-hidden border-y border-[#D9D8B8] bg-white">
-            {foods.map((food) => <div key={food.name} className="border-b border-[#E6E3D6] last:border-b-0"><SwipeRow direction="left" height={68} radius={0} rowColor="#ffffff" textColor="#4D5B3C" drawerColor="#3f3f46" actionColor="#b4534b" actionWidth={76} fullSwipe={member} closeOnAction disabled={syncBusy} label={food.name} open={swipeOpenId === food.name} onOpenChange={(open) => setSwipeOpenId(open ? food.name : null)} actions={[
-              { id: 'delete', label: '삭제', icon: <Trash2 size={19}/>, onSelect: () => void remove(food.name) },
+            {visibleFoods.map((food) => <div key={`${food.name}-${swipeVersion}`} className="border-b border-[#E6E3D6] last:border-b-0"><SwipeRow direction="left" height={68} radius={0} rowColor="#ffffff" textColor="#4D5B3C" drawerColor="#3f3f46" actionColor="#b4534b" actionWidth={76} fullSwipe={member} closeOnAction disabled={syncBusy} label={food.name} open={swipeOpenId === food.name} onOpenChange={(open) => setSwipeOpenId(open ? food.name : null)} actions={[
+              { id: 'delete', label: '삭제', icon: <Trash2 size={19}/>, onSelect: () => requestDelete(food) },
               { id: 'edit', label: '수정', color: '#3f3f46', icon: <Pencil size={19}/>, onSelect: () => startEdit(food) },
             ] satisfies SwipeAction[]}><div className="flex h-full w-full min-w-0 flex-1 items-center gap-3 bg-white">
               <span aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#EFE6D4] text-2xl">{food.icon}</span>
@@ -458,10 +494,22 @@ function DecideSession({ account, openSignIn }: { account: string | null; openSi
               </div>
             </div></SwipeRow></div>)}
             </div>
-            {foods.length === 0 && <p className="text-sm opacity-70">아직 등록된 메뉴가 없어. 첫 메뉴를 추가해줘!</p>}
+            {visibleFoods.length === 0 && <p className="py-4 text-sm opacity-70">표시할 메뉴가 없어. 검색이나 분류를 바꿔줘.</p>}
           </div>
         </div>
       </DepthDrawer>
+      <AlertDialog open={Boolean(pendingDelete)} onOpenChange={(open) => { if (!open) setPendingDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>메뉴를 삭제할까?</AlertDialogTitle>
+            <AlertDialogDescription>‘{pendingDelete?.name}’을 공유 메뉴 후보에서 삭제해. 다른 친구의 목록에서도 사라져.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={syncBusy}>취소</AlertDialogCancel>
+            <AlertDialogAction disabled={syncBusy} onClick={(event) => { event.preventDefault(); if (pendingDelete) void remove(pendingDelete.name); }}>삭제하기</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   </Shell>;
 }
