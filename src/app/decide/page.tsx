@@ -122,8 +122,29 @@ function DecideSession({ account }: { account: string | null }) {
   const startX = useRef<number | null>(null);
   const tearStart = useRef(0);
   const tearPosition = useRef(0);
-  const lastVibration = useRef(0);
-  const lastTearPosition = useRef(0);
+  const continuousRequested = useRef(false);
+  const continuousTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stopContinuous = () => {
+    if (continuousTimer.current) clearTimeout(continuousTimer.current);
+    continuousTimer.current = null;
+    if (!continuousRequested.current) return;
+    continuousRequested.current = false;
+    if (typeof window !== 'undefined') void window.MumukgNative?.stopContinuousHaptic?.().catch(() => undefined);
+  };
+  const startContinuous = (durationMs: number) => {
+    if (continuousRequested.current || typeof window === 'undefined') return;
+    const native = window.MumukgNative;
+    if (!native?.startContinuousHaptic || !native.stopContinuousHaptic) return;
+    continuousRequested.current = true;
+    void native.startContinuousHaptic({ durationMs: Math.min(durationMs, 2000), intensity: 0.55 }).catch(() => undefined);
+    continuousTimer.current = setTimeout(stopContinuous, Math.min(durationMs, 2000));
+  };
+  useEffect(() => {
+    const onHidden = () => { if (document.visibilityState !== 'visible') stopContinuous(); };
+    document.addEventListener('visibilitychange', onHidden);
+    window.addEventListener('pagehide', stopContinuous);
+    return () => { document.removeEventListener('visibilitychange', onHidden); window.removeEventListener('pagehide', stopContinuous); stopContinuous(); };
+  }, []);
   const shareResult = async () => {
     if (!choice) return;
     const message = '오늘의 메뉴는 '+choice+'! 🍽️';
@@ -240,7 +261,7 @@ function DecideSession({ account }: { account: string | null }) {
       return next;
     });
   };
-  const reset = () => { if (diceTimer.current) clearTimeout(diceTimer.current); diceTimer.current = null; setDiceRolling(false); recordedTicket.current = false; tearPosition.current = 0; setChoice(''); setFortune(''); setBattle([]); setBattleStep(0); setTicket(null); setTear(0); setDragging(false); startX.current = null; };
+  const reset = () => { stopContinuous(); if (diceTimer.current) clearTimeout(diceTimer.current); diceTimer.current = null; setDiceRolling(false); recordedTicket.current = false; tearPosition.current = 0; setChoice(''); setFortune(''); setBattle([]); setBattleStep(0); setTicket(null); setTear(0); setDragging(false); startX.current = null; };
   const changeMode = (next: Mode) => { setMode(next); reset(); focusDraw(); };
 
   const draw = () => {
@@ -250,9 +271,12 @@ function DecideSession({ account }: { account: string | null }) {
     if (mode === 'random') {
       setChoice('');
       setDiceRolling(true);
+      startContinuous(850);
       diceTimer.current = setTimeout(() => {
+        stopContinuous();
         setChoice(name);
         rememberPick(name);
+        nativeHaptic('success');
         setDiceRolling(false);
         diceTimer.current = null;
       }, 850);
@@ -272,44 +296,40 @@ function DecideSession({ account }: { account: string | null }) {
     setLightningColors(randomLightningColors());
     tearTo(0);
     setDragging(false);
-    lastTearPosition.current = 0;
   };
   const tearTo = (value: number) => {
     const next = Math.max(0, Math.min(100, value));
     tearPosition.current = next;
     setTear(next);
-    if (next === 100 && !recordedTicket.current && choice) { recordedTicket.current = true; rememberPick(choice); }
+    if (next === 100 && !recordedTicket.current && choice) {
+      recordedTicket.current = true;
+      startX.current = null;
+      setDragging(false);
+      stopContinuous();
+      rememberPick(choice);
+      nativeHaptic('success');
+      vibrate([42, 35, 65]);
+    }
   };
   const moveTear = (event: React.PointerEvent<HTMLDivElement>) => {
     if (startX.current === null) return;
     const width = event.currentTarget.parentElement?.getBoundingClientRect().width || 1;
     const next = Math.max(0, Math.min(100, tearStart.current + (event.clientX - startX.current) / width * 100));
     tearTo(next);
-    const now = event.timeStamp;
-    // Android: 뜯는 진행도에 맞춰 짧고 뚜렷한 펄스를 점점 촘촘하게 준다.
-    const interval = next >= 80 ? 65 : next >= 50 ? 85 : 110;
-    const distance = next >= 80 ? 3 : next >= 50 ? 4 : 5;
-    if (Math.abs(next - lastTearPosition.current) >= distance && now - lastVibration.current >= interval) {
-      nativeHaptic('selection');
-      vibrate(next >= 80 ? 28 : next >= 50 ? 21 : 15);
-      lastVibration.current = now;
-      lastTearPosition.current = next;
-    }
+    // Continuous haptics are started on pointer down, not emitted as individual ticks.
   };
-  const endTear = () => {
+  const endTear = (cancelled = false) => {
     if (startX.current === null) return;
     startX.current = null;
     setDragging(false);
+    stopContinuous();
     vibrate(0);
     // 95% 이상에서만 개봉. 중단하면 처음부터 다시 뜯도록 되돌린다.
-    if (tearPosition.current >= 95) {
+    if (!cancelled && tearPosition.current >= 95) {
       tearTo(100);
-      nativeHaptic('success');
-      vibrate([42, 35, 65]);
     } else {
       tearTo(0);
     }
-    lastTearPosition.current = 0;
   };
 
   const startBattle = () => {
@@ -445,7 +465,7 @@ function DecideSession({ account }: { account: string | null }) {
               <div className="mt-7 border-t border-dashed border-[#B8B69D] pt-3 text-center text-[10px] font-semibold tracking-widest opacity-50">YOUR LUCKY PICK</div>
               <BorderBeam size={85} duration={5} colorFrom="#E6B65C" colorTo="#82985A" borderWidth={2} />
             </motion.div>
-          </div> : <div className="mx-auto max-w-md">
+          </div> : <div className="mx-auto w-full max-w-[calc(28rem+5rem)] px-10 sm:px-12">
             <ElectricBorder color="#A47536" colors={lightningColors} glowColor="#594A35" speed={1.5} chaos={0.8} glow={1.8} intensity={1.7} thickness={2} spread={1} arcs={2} active={tear < 100} intro={false} interactive={false} canvasAbove borderRadius={12} className="w-full">
             <motion.div className="paper-ticket paper-ticket-large relative h-56 overflow-hidden rounded-[3px] border border-[#B9AD8C] shadow-[1px_2px_0_#C8BDA0,4px_7px_12px_#4D5B3C25]"
               animate={dragging && tear > 0 && tear < 100 ? {
@@ -481,8 +501,8 @@ function DecideSession({ account }: { account: string | null }) {
               {tear < 100 && <div className="paper-tear-handle absolute top-[27%] bottom-[27%] z-10 flex w-10 -translate-x-1/2 items-center justify-center"
                 role="slider" aria-label="종이 절취선" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(tear)} tabIndex={0}
                 style={{ left: Math.max(8, Math.min(92, tear)) + '%', touchAction: 'none' }}
-                onPointerDown={(event) => { startX.current = event.clientX; tearStart.current = tear; setDragging(true); event.currentTarget.setPointerCapture(event.pointerId); }}
-                onPointerMove={moveTear} onPointerUp={endTear} onPointerCancel={endTear}
+                onPointerDown={(event) => { startX.current = event.clientX; tearStart.current = tear; setDragging(true); startContinuous(2000); event.currentTarget.setPointerCapture(event.pointerId); }}
+                onPointerMove={moveTear} onPointerUp={() => endTear()} onPointerCancel={() => endTear(true)} onLostPointerCapture={() => endTear(true)}
                 onKeyDown={(event) => {
                   if (event.key === 'ArrowRight') { event.preventDefault(); tearTo(tear + 20); }
                   if (event.key === 'ArrowLeft') { event.preventDefault(); tearTo(tear - 20); }
@@ -517,7 +537,7 @@ function DecideSession({ account }: { account: string | null }) {
 
       {mode === 'kuji' && ticket !== null && <div className="relative z-10 mx-auto grid w-full max-w-md grid-cols-2 gap-3 px-1">
         <button type="button" onClick={reset} className={primary}>🎟️ 다시 뽑기</button>
-        <button type="button" disabled={tear === 100} onClick={() => { tearTo(100); nativeHaptic('success'); vibrate([42, 35, 65]); }}
+        <button type="button" disabled={tear === 100} onClick={() => tearTo(100)}
           className="min-h-12 rounded-2xl border border-[#4D5B3C] bg-white px-3 text-sm font-bold text-[#4D5B3C] disabled:cursor-not-allowed disabled:opacity-40">바로 열기</button>
       </div>}
 

@@ -9,6 +9,8 @@ declare global {
         | { granted: true; latitude: number; longitude: number; accuracy: number | null }
       >;
       triggerHaptic(style: 'selection' | 'success' | 'warning' | 'error'): Promise<{ performed: boolean }>;
+      startContinuousHaptic?(options?: { durationMs?: number; intensity?: number }): Promise<{ performed: boolean }>;
+      stopContinuousHaptic?(): Promise<void>;
       scheduleNotification(options: { id: string; title: string; body: string; triggerAt: string; data?: Record<string, string> }): Promise<{ id: string }>;
       cancelNotification(id: string): Promise<void>;
       getNotificationPermission(): Promise<{ status: 'granted' | 'denied' | 'undetermined' }>;
