@@ -371,7 +371,7 @@ function DecideSession({ account }: { account: string | null }) {
   const primary = 'min-h-12 rounded-2xl bg-[#4D5B3C] px-5 font-bold text-[#EFE6D4] disabled:cursor-not-allowed disabled:opacity-40';
 
   return <Shell tone="editorial">
-    <main className="min-w-0 space-y-3 pb-12 text-[#4D5B3C]">
+    <main className="min-w-0 max-w-full overflow-x-clip space-y-3 pb-12 text-[#4D5B3C]">
 
       {syncError && <p role="status" className="rounded-xl bg-[#EFE6D4] px-3 py-2 text-sm">{syncError}</p>}
       <section aria-label="랜덤뽑기 음식 분류" className="flex items-center gap-2">

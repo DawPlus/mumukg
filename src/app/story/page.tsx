@@ -393,15 +393,34 @@ export default function StoryPage() {
           <div><h2 className="text-sm font-bold">지난 7일의 식탁</h2><p className="mt-1 text-xs opacity-65">기록이 쌓일수록 식탁이 채워져요</p></div>
           <span className="rounded-full bg-[#D9D8B8]/65 px-3 py-1 text-xs font-semibold">{weekly.reduce((sum, day) => sum + day.count, 0)}끼 기록</span>
         </div>
-        <div className="grid grid-cols-7 items-end gap-2" aria-label="날짜별 기록 수">
-          {weekly.map((day, index) => <div key={day.key} className="flex flex-col items-center gap-1.5" title={`${day.key} · ${day.count}개`}>
-            <div className="flex h-14 w-full items-end justify-center rounded-lg bg-[#E8E3D3]/70 p-1">
-              <motion.div initial={reducedMotion ? false : { scaleY: 0 }} animate={{ scaleY: 1 }} transition={{ delay: 0.25 + index * 0.055, duration: 0.48, ease: 'easeOut' }}
-                style={{ height: day.count ? `${Math.max(22, day.count / weeklyMax * 100)}%` : '5%', transformOrigin: 'bottom' }}
-                className={`w-full max-w-7 rounded-md ${day.count ? 'bg-[#77875F]' : 'bg-[#C7C7AC]'}`} />
-            </div>
-            <span className="text-[10px] font-medium opacity-70">{day.label}일</span>
-          </div>)}
+        <div className="relative rounded-2xl border border-[#E0DCCB] bg-[#FFFCF5] px-3 pb-3 pt-5 sm:px-5" aria-label="날짜별 식사 기록 수 그래프">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-x-3 bottom-[34px] top-10 flex flex-col justify-between sm:inset-x-5">
+            {[0, 1, 2, 3].map(line => <div key={line} className="border-t border-dashed border-[#DCDDCB]/80" />)}
+          </div>
+          <div className="relative grid grid-cols-7 gap-1.5 sm:gap-3">
+            {weekly.map((day, index) => {
+              const active = day.key === todayIso;
+              const height = day.count ? Math.max(12, (day.count / weeklyMax) * 100) : 0;
+              return <div key={day.key} className="flex min-w-0 flex-col items-center" title={`${day.key} · ${day.count}개`} aria-label={`${day.key}: ${day.count}끼 기록`}>
+                <div className="mb-2 flex h-5 items-center justify-center">
+                  <span className={`text-[11px] font-bold tabular-nums ${day.count ? 'text-[#4D5B3C]' : 'text-[#B9BCA8]'}`}>{day.count || '·'}</span>
+                </div>
+                <div className="flex h-28 w-full items-end justify-center sm:h-32">
+                  <div className="relative flex h-full w-full max-w-9 items-end justify-center">
+                    {day.count > 0 ? <motion.div
+                      initial={reducedMotion ? false : { height: 0, opacity: 0 }}
+                      animate={{ height: `${height}%`, opacity: 1 }}
+                      transition={{ delay: index * 0.07, duration: 0.65, type: 'spring', bounce: 0.12 }}
+                      className={`w-full rounded-t-xl rounded-b-md ${active ? 'bg-[#4D5B3C]' : 'bg-[#9BA984]'}`}
+                    >
+                      <div className="mx-auto mt-1.5 h-1 w-1/2 rounded-full bg-white/35" />
+                    </motion.div> : <div className="h-1 w-full rounded-full bg-[#D6D8C6]" />}
+                  </div>
+                </div>
+                <div className={`mt-2 flex h-6 min-w-0 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold tabular-nums sm:px-2 ${active ? 'bg-[#4D5B3C] text-white' : 'text-[#777D66]'}`}>{day.label}일</div>
+              </div>;
+            })}
+          </div>
         </div>
       </motion.section>
       <motion.section {...reveal(0.25)} className="story-today mb-6">

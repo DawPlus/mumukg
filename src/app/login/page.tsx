@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion, useReducedMotion } from 'motion/react';
 import { ArrowRight, MapPin, Utensils } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { SplittingText } from '@animate-ui/react/primitives/texts/splitting';
 import { useAuth } from '@/components/auth/auth-provider';
 
@@ -61,6 +62,9 @@ export default function LoginPage() {
           <span>{loading ? '로그인 확인 중…' : busy ? '카카오로 이동 중…' : '카카오로 로그인하기'}</span>
           <ArrowRight size={20} aria-hidden="true" className="transition-transform group-hover:translate-x-1 motion-reduce:transform-none" />
         </button>
+        <Link href="/map" replace className="mt-2 flex min-h-11 items-center justify-center rounded-xl text-sm text-[#4D5B3C]/75 underline-offset-4 transition-colors hover:text-[#4D5B3C] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4D5B3C]">
+          로그인 건너뛰기
+        </Link>
         <p role="status" className="mt-3 min-h-5 text-center text-xs text-[#4D5B3C]/65">
           {error || (available ? '카카오 계정으로 간편하게 로그인해.' : '로그인 설정이 아직 준비되지 않았어.')}
         </p>
