@@ -2,7 +2,12 @@
 
 import { useMemo } from 'react';
 import { IconCloud } from '@/components/ui/icon-cloud';
-import { foodIconPath, rankRecentFoods } from '@/lib/story';
+import { getFoodIcon } from '@/lib/food-categories';
+import {
+  foodIconPath,
+  rankRecentCategories,
+  rankRecentFoods,
+} from '@/lib/story';
 import type { FoodStory } from '@/lib/types';
 
 function buildCloudImages(ranks: ReturnType<typeof rankRecentFoods>): string[] {
@@ -20,20 +25,45 @@ function buildCloudImages(ranks: ReturnType<typeof rankRecentFoods>): string[] {
 }
 
 export function StoryRankCloud({ items }: { items: FoodStory[] }) {
-  const ranks = useMemo(() => rankRecentFoods(items, 30), [items]);
+  const ranks = useMemo(() => rankRecentFoods(items, 7), [items]);
+  const categories = useMemo(
+    () => rankRecentCategories(items, 7).slice(0, 4),
+    [items],
+  );
   const images = useMemo(() => buildCloudImages(ranks), [ranks]);
 
   if (!ranks.length || !images.length) return null;
 
   return (
     <section
-      aria-label="최근 30일 자주 먹은 음식"
+      aria-label="최근 7일 자주 먹은 음식"
       className="story-taste mb-6"
     >
       <div className="story-taste__head">
         <h2 className="story-taste__title">최근 입맛</h2>
-        <p className="story-taste__sub">지난 30일 · {ranks.length}가지</p>
+        <p className="story-taste__sub">지난 일주일 · {ranks.length}가지</p>
       </div>
+      {categories.length ? (
+        <ul className="story-taste__categories" aria-label="많이 먹은 카테고리">
+          {categories.map((rank, index) => (
+            <li
+              key={rank.category}
+              className={`story-taste__category${index === 0 ? ' story-taste__category--top' : ''}`}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={getFoodIcon(rank.category)}
+                alt=""
+                width={18}
+                height={18}
+                className="h-[18px] w-[18px] shrink-0"
+              />
+              <span className="story-taste__category-name">{rank.category}</span>
+              <span className="story-taste__category-count">{rank.count}회</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       <div className="story-taste__cloud">
         <IconCloud images={images} showControl={false} />
       </div>

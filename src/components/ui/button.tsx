@@ -44,19 +44,15 @@ function Button({
   className,
   variant = "default",
   size = "default",
-  asChild = false,
   ...props
 }: React.ComponentProps<typeof AnimateButton> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-  }) {
+  VariantProps<typeof buttonVariants>) {
   return (
     <AnimateButton
       data-slot="button"
       data-variant={variant}
       data-size={size}
       className={cn(buttonVariants({ variant, size, className }))}
-      asChild={asChild}
       {...props}
     />
   )

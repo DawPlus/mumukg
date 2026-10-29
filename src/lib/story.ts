@@ -3,7 +3,7 @@ import {
   normalizeFoodCategory,
 } from './food-categories';
 import { suggestIconCode } from './food-icons';
-import type { FoodRank, FoodStory } from './types';
+import type { CategoryRank, FoodRank, FoodStory } from './types';
 
 const STORAGE_KEY = 'mumukg.story.v1';
 
@@ -96,7 +96,7 @@ function daysAgoIso(days: number) {
   return `${y}-${m}-${day}`;
 }
 
-export function rankRecentFoods(items: FoodStory[], days = 30): FoodRank[] {
+export function rankRecentFoods(items: FoodStory[], days = 7): FoodRank[] {
   const since = daysAgoIso(days - 1);
   type Acc = FoodRank & { iconVotes: Map<string, number> };
   const map = new Map<string, Acc>();
@@ -140,6 +140,56 @@ export function rankRecentFoods(items: FoodStory[], days = 30): FoodRank[] {
 
 export function formatWon(value: number) {
   return `${value.toLocaleString('ko-KR')}원`;
+}
+
+/** Category frequency in the recent window, most eaten first. */
+export function rankRecentCategories(
+  items: FoodStory[],
+  days = 7,
+): CategoryRank[] {
+  const since = daysAgoIso(days - 1);
+  const map = new Map<string, CategoryRank>();
+  for (const item of items) {
+    if (item.eatenAt < since) continue;
+    const category = normalizeFoodCategory(item.category);
+    const current =
+      map.get(category) ??
+      ({
+        category,
+        count: 0,
+        icon: getCategoryIconCode(category),
+      } satisfies CategoryRank);
+    current.count += 1;
+    map.set(category, current);
+  }
+  return [...map.values()].sort((a, b) => {
+    if (b.count !== a.count) return b.count - a.count;
+    return a.category.localeCompare(b.category, 'ko');
+  });
+}
+
+/** Distinct recent foods for quick re-entry, newest first. */
+export function recentFoodPicks(
+  items: FoodStory[],
+  limit = 8,
+): Array<Pick<FoodStory, 'name' | 'category' | 'icon'>> {
+  const seen = new Set<string>();
+  const picks: Array<Pick<FoodStory, 'name' | 'category' | 'icon'>> = [];
+  for (const item of items) {
+    const key = storyLabel(item);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    picks.push({
+      name: item.name.trim() ? item.name.trim() : '',
+      category: item.category,
+      icon:
+        item.icon ||
+        getCategoryIconCode(item.category) ||
+        suggestIconCode(key),
+    });
+    if (picks.length >= limit) break;
+  }
+  return picks;
 }
 
 export {

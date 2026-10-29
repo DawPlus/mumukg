@@ -35,7 +35,10 @@ export function useCurrentLocation() {
     );
   }, []);
 
-  useEffect(() => { locate(); }, [locate]);
+  useEffect(() => {
+    const id = window.setTimeout(locate, 0);
+    return () => window.clearTimeout(id);
+  }, [locate]);
 
   return { location, loading, error, locate };
 }

@@ -13,6 +13,9 @@ export type TasteLink = {
   videoId?: string;
   shortcode?: string;
   createdAt: string;
+  isFavorite?: boolean;
+  isVisited?: boolean;
+  categoryType?: 'restaurant' | 'recipe';
 };
 
 const STORAGE_KEY = 'mumukg_taste_links_v2';
@@ -81,26 +84,86 @@ export function detectPlatform(url: string): TastePlatform {
   return 'web';
 }
 
+export function detectTasteContentType(item: {
+  title: string;
+  memo?: string;
+  tags?: string[];
+  categoryType?: 'restaurant' | 'recipe';
+}): 'recipe' | 'restaurant' {
+  if (item.categoryType) return item.categoryType;
+  const text = `${item.title} ${item.memo || ''} ${(item.tags || []).join(' ')}`.toLowerCase();
+  const recipeKeywords = [
+    '레시피',
+    '만드는법',
+    '만드는 법',
+    '만들기',
+    '재료',
+    '초간단',
+    '홈쿠킹',
+    '집밥',
+    '뚝딱',
+    '요리법',
+    '간단요리',
+    '황금레시피',
+    'recipe',
+    '조리법',
+    '양념장',
+    '소스 만들기',
+  ];
+  if (recipeKeywords.some((kw) => text.includes(kw))) {
+    return 'recipe';
+  }
+  return 'restaurant';
+}
+
+let memoryLinks: TasteLink[] | null = null;
+const listeners = new Set<() => void>();
+
+export function subscribeTasteLinks(callback: () => void): () => void {
+  listeners.add(callback);
+  return () => {
+    listeners.delete(callback);
+  };
+}
+
+export function getTasteLinksSnapshot(): TasteLink[] {
+  if (typeof window === 'undefined') return INITIAL_SAMPLES;
+  if (!memoryLinks) {
+    memoryLinks = loadTasteLinks();
+  }
+  return memoryLinks;
+}
+
+export function getTasteLinksServerSnapshot(): TasteLink[] {
+  return INITIAL_SAMPLES;
+}
+
 export function loadTasteLinks(): TasteLink[] {
   if (typeof window === 'undefined') return INITIAL_SAMPLES;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_SAMPLES));
+      memoryLinks = INITIAL_SAMPLES;
       return INITIAL_SAMPLES;
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_SAMPLES;
+    const result = Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_SAMPLES;
+    memoryLinks = result;
+    return result;
   } catch {
+    memoryLinks = INITIAL_SAMPLES;
     return INITIAL_SAMPLES;
   }
 }
 
 export function saveTasteLinks(items: TasteLink[]): void {
   if (typeof window === 'undefined') return;
+  memoryLinks = items;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   } catch (e) {
     console.error('Failed to save taste links', e);
   }
+  listeners.forEach((listener) => listener());
 }

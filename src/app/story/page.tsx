@@ -1,12 +1,26 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { X } from 'lucide-react';
+import { CalendarDays, ChevronRight, Plus, X } from 'lucide-react';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Delete02Icon, PencilEdit01Icon } from '@hugeicons/core-free-icons';
 import { Shell } from '@/components/shell';
 import { StoryRankCloud } from '@/components/story-rank-cloud';
+import SwipeRow, { type SwipeAction } from '@/components/SwipeRow';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { DepthDrawer } from '@/components/ui/depth-drawer';
 import { DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/toast';
 import {
   foodCategories,
   getCategoryIconCode,
@@ -15,8 +29,8 @@ import {
   type FoodCategory,
 } from '@/lib/food-categories';
 import {
-  formatWon,
   loadStories,
+  recentFoodPicks,
   saveStories,
   storyLabel,
 } from '@/lib/story';
@@ -24,6 +38,56 @@ import type { FoodStory } from '@/lib/types';
 import './story.css';
 
 type Panel = 'past' | 'day' | 'form';
+
+/* React Bits SwipeRow demo defaults — light row only for story cream surface */
+const SWIPE_ROW = {
+  direction: 'left' as const,
+  height: 64,
+  radius: 16,
+  actionWidth: 80,
+  rowColor: '#fffaf3',
+  textColor: '#4d5b3c',
+  drawerColor: '#3f3f46',
+  actionColor: '#e5484d',
+  fullSwipe: true,
+  closeOnAction: true,
+};
+
+function storySwipeActions(
+  _item: FoodStory,
+  onEdit: () => void,
+  onDelete: () => void,
+): SwipeAction[] {
+  return [
+    {
+      id: 'delete',
+      label: '삭제',
+      icon: (
+        <HugeiconsIcon
+          icon={Delete02Icon}
+          size={20}
+          strokeWidth={2}
+          aria-hidden="true"
+        />
+      ),
+      onSelect: onDelete,
+    },
+    {
+      id: 'edit',
+      label: '수정',
+      color: '#3f3f46',
+      icon: (
+        <HugeiconsIcon
+          icon={PencilEdit01Icon}
+          size={20}
+          strokeWidth={2}
+          aria-hidden="true"
+        />
+      ),
+      onSelect: onEdit,
+    },
+  ];
+}
 
 function today() {
   const d = new Date();
@@ -76,6 +140,8 @@ export default function StoryPage() {
   const [panelStack, setPanelStack] = useState<Panel[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [deletingItem, setDeletingItem] = useState<FoodStory | null>(null);
+  const [swipeOpenId, setSwipeOpenId] = useState<string | null>(null);
 
   const panelDepth = panelStack.length;
   const activePanel = panelStack[panelStack.length - 1] ?? null;
@@ -102,9 +168,16 @@ export default function StoryPage() {
   }
 
   function closeAllPanels() {
+    // Block click-through to controls under the drawer while it unmounts.
+    const root = document.body;
+    root.style.pointerEvents = 'none';
+    window.setTimeout(() => {
+      root.style.pointerEvents = '';
+    }, 350);
     setPanelStack([]);
     setEditing(null);
     setError('');
+    setSwipeOpenId(null);
   }
 
   function openPastList() {
@@ -122,8 +195,9 @@ export default function StoryPage() {
     );
   }
 
-  function startAdd(_date?: string) {
-    const eatenAt = today();
+  function startAdd(date?: string) {
+    const candidate = date ?? selectedDate ?? today();
+    const eatenAt = /^\d{4}-\d{2}-\d{2}$/.test(candidate) ? candidate : today();
     setForm({ ...initialForm, eatenAt });
     setEditing(null);
     setError('');
@@ -156,11 +230,12 @@ export default function StoryPage() {
     e.preventDefault();
     const category = normalizeFoodCategory(form.category);
     const name = form.name.trim();
-    const eatenAt = editing ? form.eatenAt.trim() : today();
+    const eatenAt = form.eatenAt.trim() || today();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(eatenAt)) {
       setError('날짜를 확인할 수 없어요.');
       return;
     }
+    const wasEditing = Boolean(editing);
     const payload = {
       category,
       name,
@@ -180,7 +255,6 @@ export default function StoryPage() {
                 name: payload.name,
                 note: payload.note,
                 icon: payload.icon,
-                // keep legacy place/rating/amount on edit; clear only if we want full simplify
                 place: item.place,
                 rating: item.rating,
                 amount: item.amount,
@@ -197,18 +271,20 @@ export default function StoryPage() {
         ];
     if (persist(next)) {
       setSelectedDate(eatenAt);
-      setEditing(null);
-      setError('');
-      setPanelStack((stack) =>
-        stack.includes('past') ? ['past', 'day'] : ['day'],
-      );
+      const title = wasEditing ? '기록을 수정했어요.' : '기록을 남겼어요.';
+      // Close to main immediately (no day-list detour). Defer toast so it
+      // does not fight the drawer modal, and keep the click-through guard.
+      closeAllPanels();
+      window.setTimeout(() => {
+        toast.add({ title });
+      }, 320);
     }
   }
 
-  function remove(item: FoodStory) {
-    if (window.confirm(`'${storyLabel(item)}' 기록을 삭제할까?`)) {
-      const next = items.filter((x) => x.id !== item.id);
-      persist(next);
+  function confirmDelete(item: FoodStory) {
+    const next = items.filter((x) => x.id !== item.id);
+    if (persist(next)) {
+      toast.add({ title: '기록을 삭제했어요.' });
     }
   }
 
@@ -241,21 +317,27 @@ export default function StoryPage() {
   }, [items, selectedDate]);
 
   const dayHeading = selectedDate ? formatDayHeading(selectedDate) : null;
+  const selectedIsToday = selectedDate === todayIso;
+  const quickPicks = useMemo(() => recentFoodPicks(items, 8), [items]);
 
   return (
     <Shell tone="editorial">
       <StoryRankCloud items={items} />
 
-      <section className="story-today mb-8">
+      <section className="story-today mb-6">
         <div className="story-today__head">
           <div>
-            <p className="story-today__eyebrow">오늘의 메뉴</p>
             <h2 className="story-today__title">오늘</h2>
+            <p className="story-today__sub">
+              {todayItems.length
+                ? `${todayItems.length}개 · 밀어서 수정·삭제`
+                : '아직 기록이 없어요'}
+            </p>
           </div>
           <Button
             type="button"
             variant="outline"
-            className="!h-9 !min-h-9 shrink-0 !rounded-full !border-[#d9d8b8] !bg-[#f7f5ef] !px-3.5 text-[13px] font-semibold !text-[#4d5b3c] hover:!bg-[#efe6d4]"
+            className="story-today__add"
             onClick={() => startAdd(todayIso)}
           >
             기록하기
@@ -263,48 +345,71 @@ export default function StoryPage() {
         </div>
 
         {todayItems.length ? (
-          <>
-            <ul className="story-today__list">
-              {todayItems.map((item) => (
-                <li key={item.id} className="story-today__item">
-                  <div className="story-today__icon">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={getFoodIcon(item.category)}
-                      alt=""
-                      width={40}
-                      height={40}
-                      className="h-10 w-10"
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="story-today__name">{storyLabel(item)}</p>
-                    <p className="story-today__meta">
-                      {[item.category, item.place, item.rating != null ? `${item.rating}점` : '']
-                        .filter(Boolean)
-                        .join(' · ') || '기록됨'}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-            <Button
-              type="button"
-              className="mt-3 !h-12 !min-h-12 w-full !bg-[#66734b] text-[15px] font-medium hover:!bg-[#556340]"
-              onClick={() => openDay(todayIso)}
-            >
-              오늘 상세 보기
-            </Button>
-          </>
+          <ul className="story-today__list">
+            {todayItems.map((item) => (
+              <li key={item.id} className="story-swipe-item">
+                <SwipeRow
+                  {...SWIPE_ROW}
+                  open={swipeOpenId === `today-${item.id}`}
+                  onOpenChange={(open) =>
+                    setSwipeOpenId(open ? `today-${item.id}` : null)
+                  }
+                  label={storyLabel(item)}
+                  actions={storySwipeActions(
+                    item,
+                    () => startEdit(item),
+                    () => setDeletingItem(item),
+                  )}
+                  onCommit={(action) => {
+                    if (action.id === 'delete') setDeletingItem(item);
+                  }}
+                >
+                  <button
+                    type="button"
+                    className="story-today__item story-today__item--button story-today__item--flush"
+                    onClick={() => {
+                      if (swipeOpenId) {
+                        setSwipeOpenId(null);
+                        return;
+                      }
+                      openDay(todayIso);
+                    }}
+                  >
+                    <div className="story-today__icon">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={getFoodIcon(item.category)}
+                        alt=""
+                        width={30}
+                        height={30}
+                        className="h-[30px] w-[30px]"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1 text-left">
+                      <p className="story-today__name">{storyLabel(item)}</p>
+                      <p className="story-today__meta">
+                        {[
+                          item.category,
+                          item.note.trim() ? item.note.trim() : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </p>
+                    </div>
+                  </button>
+                </SwipeRow>
+              </li>
+            ))}
+          </ul>
         ) : (
           <div className="story-today__empty">
-            <p>아직 오늘 먹은 기록이 없어.</p>
+            <p>오늘 먹은 걸 남겨볼까?</p>
             <Button
               type="button"
-              className="mt-3 !h-12 !min-h-12 w-full !bg-[#66734b] text-[15px] font-medium hover:!bg-[#556340]"
+              className="story-today__empty-cta"
               onClick={() => startAdd(todayIso)}
             >
-              오늘 먹은 거 기록하기
+              첫 기록 남기기
             </Button>
           </div>
         )}
@@ -318,9 +423,9 @@ export default function StoryPage() {
             onClick={openPastList}
             aria-label="지난 기록"
             title="지난 기록"
-            className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom)+3.5rem)] right-4 z-40 size-12 min-h-12 !rounded-full !border border-[#d9d8b8] !bg-[#f7f5ef] !p-0 text-xl shadow-lg shadow-[#38432f]/20 hover:!bg-[#efe6d4]"
+            className="story-fab fixed bottom-[calc(5rem+env(safe-area-inset-bottom)+3.5rem)] right-4 z-40 size-12 min-h-12 !rounded-full !p-0"
           >
-            <span aria-hidden="true">📋</span>
+            <CalendarDays size={20} strokeWidth={2} aria-hidden="true" />
           </Button>
           <Button
             type="button"
@@ -328,9 +433,9 @@ export default function StoryPage() {
             onClick={() => startAdd(todayIso)}
             aria-label="먹은 음식 기록"
             title="먹은 음식 기록"
-            className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-40 size-12 min-h-12 !rounded-full !border border-[#d9d8b8] !bg-[#f7f5ef] !p-0 text-xl shadow-lg shadow-[#38432f]/20 hover:!bg-[#efe6d4]"
+            className="story-fab story-fab--primary fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-40 size-12 min-h-12 !rounded-full !p-0"
           >
-            <span aria-hidden="true">🐷</span>
+            <Plus size={22} strokeWidth={2.25} aria-hidden="true" />
           </Button>
         </>
       ) : null}
@@ -338,21 +443,21 @@ export default function StoryPage() {
       <DepthDrawer open={panelDepth > 0} depth={panelDepth} onClose={closeAllPanels}>
         {activePanel === 'past' ? (
           <>
-            <DrawerHeader className="flex-row shrink-0 items-center justify-between gap-3 border-b border-[#e6e1d1] px-4 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] text-left">
+            <DrawerHeader className="story-drawer-head flex-row shrink-0 items-center justify-between gap-3 px-5 py-4 pt-[calc(env(safe-area-inset-top)+0.85rem)] text-left">
               <div className="min-w-0">
-                <DrawerTitle className="text-lg font-bold leading-tight text-[#3f4b32]">
+                <DrawerTitle className="story-drawer-head__title">
                   지난 기록
                 </DrawerTitle>
-                <p className="mt-0.5 text-xs text-[#777765]">
+                <p className="story-drawer-head__sub">
                   {pastGrouped.length
-                    ? `${pastGrouped.length}일 · 눌러서 자세히`
+                    ? `최근 ${pastGrouped.length}일`
                     : '아직 지난 기록이 없어'}
                 </p>
               </div>
               <Button
                 type="button"
                 variant="ghost"
-                className="size-9 min-h-9 shrink-0 rounded-full !p-0"
+                className="story-drawer-head__close size-9 min-h-9 shrink-0 rounded-full !p-0"
                 aria-label="전체 닫기"
                 title="전체 닫기"
                 onClick={closeAllPanels}
@@ -361,52 +466,83 @@ export default function StoryPage() {
               </Button>
             </DrawerHeader>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3">
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-2">
               {pastGrouped.length ? (
-                <div className="story-timeline__days">
-                  {pastGrouped.map(([date, rows]) => {
+                <ol className="story-timeline__days">
+                  {pastGrouped.map(([date, rows], index) => {
                     const heading = formatDayHeading(date);
+                    const preview = rows.slice(0, 4);
+                    const rest = rows.length - preview.length;
                     return (
-                      <button
-                        key={date}
-                        type="button"
-                        className="story-timeline__day"
-                        onClick={() => openDay(date)}
-                        aria-label={`${heading.label} 상세 보기`}
-                      >
-                        <div className="story-timeline__day-head">
-                          <div>
-                            <h3 className="story-timeline__day-label">
-                              {heading.label}
-                            </h3>
-                            {heading.meta ? (
-                              <p className="story-timeline__day-meta">
-                                {heading.meta}
-                              </p>
-                            ) : null}
-                          </div>
+                      <li key={date} className="story-timeline__item">
+                        <div
+                          className="story-timeline__rail"
+                          aria-hidden="true"
+                        >
+                          <span className="story-timeline__dot" />
+                          {index < pastGrouped.length - 1 ? (
+                            <span className="story-timeline__line" />
+                          ) : null}
                         </div>
-                        <div className="story-timeline__foods">
-                          {rows.map((item) => (
-                            <div key={item.id} className="story-timeline__food">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={getFoodIcon(item.category)}
-                                alt=""
-                                width={22}
-                                height={22}
-                                className="h-[22px] w-[22px] shrink-0"
-                              />
-                              <span className="min-w-0 truncate">
-                                {storyLabel(item)}
-                              </span>
+                        <button
+                          type="button"
+                          className="story-timeline__day"
+                          onClick={() => openDay(date)}
+                          aria-label={`${heading.label} 상세 보기, ${rows.length}개`}
+                        >
+                          <div className="story-timeline__day-head">
+                            <div className="min-w-0">
+                              <h3 className="story-timeline__day-label">
+                                {heading.label}
+                              </h3>
+                              {heading.meta ? (
+                                <p className="story-timeline__day-meta">
+                                  {heading.meta}
+                                </p>
+                              ) : null}
                             </div>
-                          ))}
-                        </div>
-                      </button>
+                            <div className="story-timeline__day-aside">
+                              <span className="story-timeline__count">
+                                {rows.length}개
+                              </span>
+                              <ChevronRight
+                                size={16}
+                                strokeWidth={2}
+                                className="story-timeline__chevron"
+                                aria-hidden="true"
+                              />
+                            </div>
+                          </div>
+                          <ul className="story-timeline__foods">
+                            {preview.map((item) => (
+                              <li
+                                key={item.id}
+                                className="story-timeline__chip"
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={getFoodIcon(item.category)}
+                                  alt=""
+                                  width={16}
+                                  height={16}
+                                  className="h-4 w-4 shrink-0"
+                                />
+                                <span className="min-w-0 truncate">
+                                  {storyLabel(item)}
+                                </span>
+                              </li>
+                            ))}
+                            {rest > 0 ? (
+                              <li className="story-timeline__chip story-timeline__chip--more">
+                                +{rest}
+                              </li>
+                            ) : null}
+                          </ul>
+                        </button>
+                      </li>
                     );
                   })}
-                </div>
+                </ol>
               ) : (
                 <div className="story-empty">
                   <p className="text-[14px] text-[var(--muted)]">
@@ -446,54 +582,50 @@ export default function StoryPage() {
                 {dayItems.length ? (
                   <div className="story-day__list">
                     {dayItems.map((item) => (
-                      <article key={item.id} className="story-day__row">
-                        <div className="story-day__icon">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={getFoodIcon(item.category)}
-                            alt=""
-                            width={28}
-                            height={28}
-                            className="h-7 w-7"
-                          />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="text-[16px] font-medium leading-snug tracking-tight text-[var(--ink)]">
-                            {storyLabel(item)}
-                          </h3>
-                          <p className="mt-0.5 text-[13px] text-[var(--muted)]">
-                            {[
-                              item.name.trim() ? item.category : null,
-                              item.place || null,
-                              item.amount != null ? formatWon(item.amount) : null,
-                              item.rating != null ? `${item.rating}점` : null,
-                            ]
-                              .filter(Boolean)
-                              .join(' · ') || '—'}
-                          </p>
-                          {item.note ? (
-                            <p className="mt-1.5 text-[14px] leading-relaxed text-[var(--text)]">
-                              {item.note}
-                            </p>
-                          ) : null}
-                          <div className="story-day__actions">
-                            <button
-                              type="button"
-                              className="story-day__action"
-                              onClick={() => startEdit(item)}
-                            >
-                              수정
-                            </button>
-                            <button
-                              type="button"
-                              className="story-day__action story-day__action--danger"
-                              onClick={() => remove(item)}
-                            >
-                              삭제
-                            </button>
-                          </div>
-                        </div>
-                      </article>
+                      <div key={item.id} className="story-swipe-item">
+                        <SwipeRow
+                          {...SWIPE_ROW}
+                          open={swipeOpenId === `day-${item.id}`}
+                          onOpenChange={(open) =>
+                            setSwipeOpenId(open ? `day-${item.id}` : null)
+                          }
+                          label={storyLabel(item)}
+                          actions={storySwipeActions(
+                            item,
+                            () => startEdit(item),
+                            () => setDeletingItem(item),
+                          )}
+                          onCommit={(action) => {
+                            if (action.id === 'delete') setDeletingItem(item);
+                          }}
+                        >
+                          <article className="story-day__row story-day__row--flush">
+                            <div className="story-day__icon">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={getFoodIcon(item.category)}
+                                alt=""
+                                width={28}
+                                height={28}
+                                className="h-7 w-7"
+                              />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <h3 className="story-day__name">
+                                {storyLabel(item)}
+                              </h3>
+                              <p className="story-day__note">
+                                {[
+                                  item.name.trim() ? item.category : null,
+                                  item.note.trim() || null,
+                                ]
+                                  .filter(Boolean)
+                                  .join(' · ') || '—'}
+                              </p>
+                            </div>
+                          </article>
+                        </SwipeRow>
+                      </div>
                     ))}
                   </div>
                 ) : (
@@ -509,9 +641,9 @@ export default function StoryPage() {
                 <Button
                   type="button"
                   className="!h-14 !min-h-14 w-full !py-4 text-base !bg-[#66734b] hover:!bg-[#556340]"
-                  onClick={() => startAdd()}
+                  onClick={() => startAdd(selectedDate ?? undefined)}
                 >
-                  오늘 기록하기
+                  {selectedIsToday ? '오늘 기록하기' : '이 날 기록하기'}
                 </Button>
               </div>
             </div>
@@ -526,7 +658,11 @@ export default function StoryPage() {
                   {editing ? '기록 수정' : '새 기록'}
                 </DrawerTitle>
                 {!editing ? (
-                  <p className="mt-0.5 text-xs text-[#777765]">오늘 · 날짜 고정</p>
+                  <p className="mt-0.5 text-xs text-[#777765]">
+                    {form.eatenAt === todayIso
+                      ? '오늘 · 날짜 고정'
+                      : `${form.eatenAt.replaceAll('-', '.')} · 이 날 기록`}
+                  </p>
                 ) : null}
               </div>
               <Button
@@ -590,6 +726,45 @@ export default function StoryPage() {
                   </div>
                 </fieldset>
 
+                {!editing && quickPicks.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className={labelClass}>최근 먹은 거</p>
+                    <div className="story-quick-picks">
+                      {quickPicks.map((pick) => {
+                        const label = storyLabel(pick);
+                        const active =
+                          form.category === normalizeFoodCategory(pick.category) &&
+                          form.name.trim() === pick.name.trim();
+                        return (
+                          <button
+                            key={`${pick.category}-${label}`}
+                            type="button"
+                            className={`story-quick-pick${active ? ' story-quick-pick--active' : ''}`}
+                            onClick={() =>
+                              setForm({
+                                ...form,
+                                category: normalizeFoodCategory(pick.category),
+                                name: pick.name,
+                              })
+                            }
+                            aria-pressed={active}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={getFoodIcon(pick.category)}
+                              alt=""
+                              width={18}
+                              height={18}
+                              className="h-[18px] w-[18px] shrink-0"
+                            />
+                            <span className="min-w-0 truncate">{label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null}
+
                 <label className={labelClass}>
                   세부 이름 (선택)
                   <input
@@ -631,6 +806,47 @@ export default function StoryPage() {
           </>
         ) : null}
       </DepthDrawer>
+
+      <AlertDialog
+        open={!!deletingItem}
+        onOpenChange={(open) => {
+          if (!open) setDeletingItem(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>기록을 삭제할까요?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deletingItem ? (
+                <>
+                  <span className="font-semibold text-[#3f4b32]">
+                    &apos;{storyLabel(deletingItem)}&apos;
+                  </span>
+                  <br />
+                  삭제하면 되돌릴 수 없어요.
+                </>
+              ) : (
+                '삭제하면 되돌릴 수 없어요.'
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeletingItem(null)}>
+              취소
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deletingItem) {
+                  confirmDelete(deletingItem);
+                  setDeletingItem(null);
+                }
+              }}
+            >
+              삭제하기
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Shell>
   );
 }

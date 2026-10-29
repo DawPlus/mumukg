@@ -62,7 +62,7 @@ export async function POST(request: Request) {
     if (platform === 'instagram') {
       const shortcode = extractInstagramCode(trimmedUrl);
       let title = '인스타그램 릴스';
-      let author = 'Instagram';
+      const author = 'Instagram';
       let thumbnailUrl: string | null = null;
 
       try {

@@ -346,7 +346,6 @@ const GooeyNav = ({
   const backgroundRef = useRef<SVGPathElement>(null);
   const engineRef = useRef<{ go: (index: number) => void; refresh: () => void } | null>(null);
   const indexRef = useRef(current);
-  indexRef.current = current;
   const palette = theme === 'light' ? 'light' : 'dark';
   const pillColor = color || PILLS[palette].color;
   const pillRgb = parse(pillColor);
@@ -364,7 +363,10 @@ const GooeyNav = ({
     shadow: PILLS[palette].shadow
   };
   const settingsRef = useRef(settings);
-  settingsRef.current = settings;
+  useIsomorphicLayoutEffect(() => {
+    indexRef.current = current;
+    settingsRef.current = settings;
+  });
 
   const select = (index: number) => {
     if (index === current) return;

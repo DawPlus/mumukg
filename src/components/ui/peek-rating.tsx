@@ -124,7 +124,7 @@ export default function PeekRating({
     onPreview?.(index === null ? null : index + 1);
   };
   const setHoverRef = useRef(setHover);
-  setHoverRef.current = setHover;
+  useLayoutEffect(() => { setHoverRef.current = setHover; });
 
   const measure = () => {
     const row = rowRef.current;

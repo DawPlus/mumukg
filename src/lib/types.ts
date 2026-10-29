@@ -24,3 +24,9 @@ export type FoodRank = {
   totalAmount: number;
   icon: string;
 };
+
+export type CategoryRank = {
+  category: string;
+  count: number;
+  icon: string;
+};
