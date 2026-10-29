@@ -6,7 +6,7 @@ const tabs = [
   { href: '/map', name: '지도', emoji: '🗺️' },
   { href: '/matnaboim', name: '맛나보임', emoji: '🍽️' },
   { href: '/decide', name: '랜덤메뉴', emoji: '🎲' },
-  { href: '/delivery', name: '배달음식', emoji: '🛵' },
+  { href: '/delivery', name: '냉털', emoji: '🧊' },
   { href: '/story', name: '먹스토리', emoji: '📖' },
 ];
 

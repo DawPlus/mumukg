@@ -21,6 +21,7 @@ export interface ElectricBorderProps {
   active?: boolean;
   intro?: boolean;
   interactive?: boolean;
+  canvasAbove?: boolean;
   cursorRadius?: number;
   theme?: 'dark' | 'light';
   className?: string;
@@ -492,6 +493,7 @@ const ElectricBorder = ({
   active = true,
   intro = true,
   interactive = true,
+  canvasAbove = false,
   cursorRadius = 90,
   theme = 'dark',
   className = '',
@@ -845,7 +847,7 @@ const ElectricBorder = ({
       {children}
       <canvas
         ref={canvasRef}
-        className="pointer-events-none absolute z-[1] block"
+        className={`pointer-events-none absolute block ${canvasAbove ? "z-20" : "z-[1]"}`}
         style={{ top: -MARGIN, left: -MARGIN }}
         aria-hidden="true"
       />

@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, ChevronRight, Plus, X } from 'lucide-react';
+import { motion, useReducedMotion } from 'motion/react';
+import { CalendarDays, ChevronRight, Plus, X, Search, CloudUpload } from 'lucide-react';
+import { useAuth } from '@/components/auth/auth-provider';
+import { syncStoryRecords, saveStoryRecord, deleteStoryRecord } from '@/lib/story-db';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Delete02Icon, PencilEdit01Icon } from '@hugeicons/core-free-icons';
 import { Shell } from '@/components/shell';
@@ -36,6 +39,7 @@ import {
 } from '@/lib/story';
 import type { FoodStory } from '@/lib/types';
 import './story.css';
+import './story-motion.css';
 
 type Panel = 'past' | 'day' | 'form';
 
@@ -134,6 +138,14 @@ const initialForm = {
 };
 
 export default function StoryPage() {
+  const { user } = useAuth();
+  const reducedMotion = useReducedMotion();
+  const reveal = (delay: number) => reducedMotion ? {} : { initial: { opacity: 0, y: 24, scale: 0.97 }, animate: { opacity: 1, y: 0, scale: 1 }, transition: { type: 'spring' as const, stiffness: 210, damping: 24, delay } };
+  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<FoodCategory | '전체'>('전체');
+  const [syncActive, setSyncActive] = useState(false);
+  const [syncBusy, setSyncBusy] = useState(false);
+  const [syncMessage, setSyncMessage] = useState('');
   const [items, setItems] = useState<FoodStory[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
   const [form, setForm] = useState(initialForm);
@@ -168,12 +180,6 @@ export default function StoryPage() {
   }
 
   function closeAllPanels() {
-    // Block click-through to controls under the drawer while it unmounts.
-    const root = document.body;
-    root.style.pointerEvents = 'none';
-    window.setTimeout(() => {
-      root.style.pointerEvents = '';
-    }, 350);
     setPanelStack([]);
     setEditing(null);
     setError('');
@@ -231,10 +237,11 @@ export default function StoryPage() {
     const category = normalizeFoodCategory(form.category);
     const name = form.name.trim();
     const eatenAt = form.eatenAt.trim() || today();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(eatenAt)) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(eatenAt) || Number.isNaN(new Date(`${eatenAt}T12:00:00`).getTime()) || eatenAt > today()) {
       setError('날짜를 확인할 수 없어요.');
       return;
     }
+    if (!name) { setError('먹은 음식 이름을 입력해 줘.'); return; }
     const wasEditing = Boolean(editing);
     const payload = {
       category,
@@ -254,6 +261,7 @@ export default function StoryPage() {
                 category: payload.category,
                 name: payload.name,
                 note: payload.note,
+                eatenAt: payload.eatenAt,
                 icon: payload.icon,
                 place: item.place,
                 rating: item.rating,
@@ -270,8 +278,12 @@ export default function StoryPage() {
           ...items,
         ];
     if (persist(next)) {
+      if (syncActive) {
+        const saved = editing ? next.find(item => item.id === editing) : next[0];
+        if (saved) void saveStoryRecord(saved).catch(() => setSyncMessage('서버 저장 실패: 로컬에는 기록되어 있어. 다시 동기화해 줘.'));
+      }
       setSelectedDate(eatenAt);
-      const title = wasEditing ? '기록을 수정했어요.' : '기록을 남겼어요.';
+      const title = wasEditing ? '수정 완료' : '기록 완료';
       // Close to main immediately (no day-list detour). Defer toast so it
       // does not fight the drawer modal, and keep the click-through guard.
       closeAllPanels();
@@ -284,7 +296,8 @@ export default function StoryPage() {
   function confirmDelete(item: FoodStory) {
     const next = items.filter((x) => x.id !== item.id);
     if (persist(next)) {
-      toast.add({ title: '기록을 삭제했어요.' });
+      if (syncActive) void deleteStoryRecord(item.id).catch(() => setSyncMessage('서버 삭제 실패: 동기화 상태를 확인해 줘.'));
+      toast.add({ title: '삭제 완료' });
     }
   }
 
@@ -319,12 +332,79 @@ export default function StoryPage() {
   const dayHeading = selectedDate ? formatDayHeading(selectedDate) : null;
   const selectedIsToday = selectedDate === todayIso;
   const quickPicks = useMemo(() => recentFoodPicks(items, 8), [items]);
+  const monthly = useMemo(() => {
+    const rows = items.filter(item => item.eatenAt.startsWith(todayIso.slice(0, 7)));
+    const categories = new Map<string, number>();
+    for (const item of rows) categories.set(item.category, (categories.get(item.category) ?? 0) + 1);
+    return { total: rows.length, variety: new Set(rows.map(item => storyLabel(item))).size,
+      top: [...categories.entries()].sort((a,b) => b[1] - a[1])[0]?.[0] ?? '없음' };
+  }, [items, todayIso]);
+  const weekly = useMemo(() => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - 6);
+    const keys = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(start);
+      date.setDate(date.getDate() + index);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    });
+    const counts = new Map<string, number>();
+    for (const item of items) counts.set(item.eatenAt, (counts.get(item.eatenAt) ?? 0) + 1);
+    return keys.map((key) => ({ key, count: counts.get(key) ?? 0, label: String(Number(key.slice(-2))) }));
+  }, [items]);
+  const weeklyMax = Math.max(1, ...weekly.map(day => day.count));
+  const visiblePast = useMemo(() => pastGrouped.map(([day, records]) =>
+    [day, records.filter(item =>
+      (categoryFilter === '전체' || normalizeFoodCategory(item.category) === categoryFilter) &&
+      (storyLabel(item) + ' ' + item.note).toLocaleLowerCase().includes(search.trim().toLocaleLowerCase())
+    )] as const).filter(([, records]) => records.length > 0), [pastGrouped, search, categoryFilter]);
+  async function syncNow() {
+    if (syncBusy) return;
+    setSyncBusy(true);
+    try {
+      const merged = await syncStoryRecords(items);
+      saveStories(merged);
+      setItems(merged);
+      setSyncActive(true);
+      setSyncMessage('동기화 완료');
+    } catch (cause) {
+      setSyncMessage(cause instanceof Error ? cause.message : '동기화에 실패했어.');
+    } finally { setSyncBusy(false); }
+  }
 
   return (
     <Shell tone="editorial">
-      <StoryRankCloud items={items} />
+      <motion.div {...reveal(0.03)} className="relative"><StoryRankCloud items={items} /></motion.div>
+      <motion.section {...reveal(0.14)} className="story-summary mb-5 rounded-2xl border border-[#D9D8B8] bg-[#F7F3E9] p-4 text-[#4D5B3C]" aria-label="이번 달 먹스토리 요약">
+        <div className="mb-3 text-sm font-bold">이번 달 먹스토리</div>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <motion.div whileHover={reducedMotion ? undefined : { y: -3 }} className="story-summary__stat"><motion.div key={monthly.total} initial={reducedMotion ? false : { scale: 1.2, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-2xl font-black">{monthly.total}</motion.div><div className="text-xs opacity-70">기록</div></motion.div>
+          <motion.div whileHover={reducedMotion ? undefined : { y: -3 }} className="story-summary__stat"><motion.div key={monthly.variety} initial={reducedMotion ? false : { scale: 1.2, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-2xl font-black">{monthly.variety}</motion.div><div className="text-xs opacity-70">다양한 메뉴</div></motion.div>
+          <motion.div whileHover={reducedMotion ? undefined : { y: -3 }} className="story-summary__stat"><motion.div key={monthly.top} initial={reducedMotion ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="truncate text-base font-black">{monthly.top}</motion.div><div className="text-xs opacity-70">많이 먹은 종류</div></motion.div>
+        </div>
+        {user && <div className="mt-3 border-t border-[#D9D8B8] pt-3">
+          <button type="button" disabled={syncBusy} onClick={() => void syncNow()} className="inline-flex items-center gap-2 text-xs font-semibold underline underline-offset-4 disabled:opacity-50"><CloudUpload size={15}/>{syncBusy ? '동기화 중...' : 'Supabase 기록 동기화'}</button>
+          {syncMessage && <p role="status" className="mt-1 text-xs">{syncMessage}</p>}
+        </div>}
+      </motion.section>
 
-      <section className="story-today mb-6">
+      <motion.section {...reveal(0.2)} className="story-weekly mb-5 rounded-2xl border border-[#D9D8B8]/75 bg-[#F6F1E5] px-4 py-4 text-[#4D5B3C]" aria-label="최근 7일 기록">
+        <div className="mb-3 flex items-end justify-between gap-2">
+          <div><h2 className="text-sm font-bold">지난 7일의 식탁</h2><p className="mt-1 text-xs opacity-65">기록이 쌓일수록 식탁이 채워져요</p></div>
+          <span className="rounded-full bg-[#D9D8B8]/65 px-3 py-1 text-xs font-semibold">{weekly.reduce((sum, day) => sum + day.count, 0)}끼 기록</span>
+        </div>
+        <div className="grid grid-cols-7 items-end gap-2" aria-label="날짜별 기록 수">
+          {weekly.map((day, index) => <div key={day.key} className="flex flex-col items-center gap-1.5" title={`${day.key} · ${day.count}개`}>
+            <div className="flex h-14 w-full items-end justify-center rounded-lg bg-[#E8E3D3]/70 p-1">
+              <motion.div initial={reducedMotion ? false : { scaleY: 0 }} animate={{ scaleY: 1 }} transition={{ delay: 0.25 + index * 0.055, duration: 0.48, ease: 'easeOut' }}
+                style={{ height: day.count ? `${Math.max(22, day.count / weeklyMax * 100)}%` : '5%', transformOrigin: 'bottom' }}
+                className={`w-full max-w-7 rounded-md ${day.count ? 'bg-[#77875F]' : 'bg-[#C7C7AC]'}`} />
+            </div>
+            <span className="text-[10px] font-medium opacity-70">{day.label}일</span>
+          </div>)}
+        </div>
+      </motion.section>
+      <motion.section {...reveal(0.25)} className="story-today mb-6">
         <div className="story-today__head">
           <div>
             <h2 className="story-today__title">오늘</h2>
@@ -337,7 +417,7 @@ export default function StoryPage() {
           <Button
             type="button"
             variant="outline"
-            className="story-today__add"
+            className="story-today__add story-pressable"
             onClick={() => startAdd(todayIso)}
           >
             기록하기
@@ -347,7 +427,7 @@ export default function StoryPage() {
         {todayItems.length ? (
           <ul className="story-today__list">
             {todayItems.map((item) => (
-              <li key={item.id} className="story-swipe-item">
+              <motion.li key={item.id} layout initial={reducedMotion ? false : { opacity: 0, x: -18 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.27 }} className="story-swipe-item">
                 <SwipeRow
                   {...SWIPE_ROW}
                   open={swipeOpenId === `today-${item.id}`}
@@ -398,7 +478,7 @@ export default function StoryPage() {
                     </div>
                   </button>
                 </SwipeRow>
-              </li>
+              </motion.li>
             ))}
           </ul>
         ) : (
@@ -413,7 +493,7 @@ export default function StoryPage() {
             </Button>
           </div>
         )}
-      </section>
+      </motion.section>
 
       {panelDepth === 0 ? (
         <>
@@ -423,7 +503,7 @@ export default function StoryPage() {
             onClick={openPastList}
             aria-label="지난 기록"
             title="지난 기록"
-            className="story-fab fixed bottom-[calc(5rem+env(safe-area-inset-bottom)+3.5rem)] right-4 z-40 size-12 min-h-12 !rounded-full !p-0"
+            className="story-fab story-fab--motion fixed bottom-[calc(5rem+env(safe-area-inset-bottom)+3.5rem)] right-4 z-40 size-12 min-h-12 !rounded-full !p-0"
           >
             <CalendarDays size={20} strokeWidth={2} aria-hidden="true" />
           </Button>
@@ -433,14 +513,14 @@ export default function StoryPage() {
             onClick={() => startAdd(todayIso)}
             aria-label="먹은 음식 기록"
             title="먹은 음식 기록"
-            className="story-fab story-fab--primary fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-40 size-12 min-h-12 !rounded-full !p-0"
+            className="story-fab story-fab--primary story-fab--motion fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-40 size-12 min-h-12 !rounded-full !p-0"
           >
             <Plus size={22} strokeWidth={2.25} aria-hidden="true" />
           </Button>
         </>
       ) : null}
 
-      <DepthDrawer open={panelDepth > 0} depth={panelDepth} onClose={closeAllPanels}>
+      <DepthDrawer open={panelDepth > 0} depth={1} onClose={closeAllPanels}>
         {activePanel === 'past' ? (
           <>
             <DrawerHeader className="story-drawer-head flex-row shrink-0 items-center justify-between gap-3 px-5 py-4 pt-[calc(env(safe-area-inset-top)+0.85rem)] text-left">
@@ -467,9 +547,13 @@ export default function StoryPage() {
             </DrawerHeader>
 
             <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-2">
-              {pastGrouped.length ? (
+              <div className="mb-3 flex gap-2">
+                <label className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-[#D9D8B8] bg-white px-3"><Search size={16} aria-hidden="true"/><input value={search} onChange={event => setSearch(event.target.value)} placeholder="메뉴·메모 검색" aria-label="지난 기록 검색" className="min-h-11 w-full min-w-0 text-sm outline-none"/></label>
+                <select aria-label="지난 기록 카테고리" value={categoryFilter} onChange={event => setCategoryFilter(event.target.value as FoodCategory | '전체')} className="rounded-lg border border-[#D9D8B8] bg-white px-2 text-sm"><option value="전체">전체</option>{foodCategories.map(category => <option key={category} value={category}>{category}</option>)}</select>
+              </div>
+              {visiblePast.length ? (
                 <ol className="story-timeline__days">
-                  {pastGrouped.map(([date, rows], index) => {
+                  {visiblePast.map(([date, rows], index) => {
                     const heading = formatDayHeading(date);
                     const preview = rows.slice(0, 4);
                     const rest = rows.length - preview.length;
@@ -660,7 +744,7 @@ export default function StoryPage() {
                 {!editing ? (
                   <p className="mt-0.5 text-xs text-[#777765]">
                     {form.eatenAt === todayIso
-                      ? '오늘 · 날짜 고정'
+                      ? '오늘의 기록'
                       : `${form.eatenAt.replaceAll('-', '.')} · 이 날 기록`}
                   </p>
                 ) : null}
@@ -766,7 +850,12 @@ export default function StoryPage() {
                 ) : null}
 
                 <label className={labelClass}>
-                  세부 이름 (선택)
+                  날짜
+                  <input type="date" value={form.eatenAt} max={todayIso} onChange={(event) => setForm({ ...form, eatenAt: event.target.value })} className={fieldClass} />
+                </label>
+
+                <label className={labelClass}>
+                  음식 이름
                   <input
                     maxLength={70}
                     value={form.name}

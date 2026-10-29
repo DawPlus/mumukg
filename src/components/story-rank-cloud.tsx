@@ -32,7 +32,7 @@ export function StoryRankCloud({ items }: { items: FoodStory[] }) {
   );
   const images = useMemo(() => buildCloudImages(ranks), [ranks]);
 
-  if (!ranks.length || !images.length) return null;
+  const cloudImages = images.length ? images : ['한식', '중식', '일식', '양식', '디저트', '기타'].map(category => getFoodIcon(category));
 
   return (
     <section
@@ -41,7 +41,7 @@ export function StoryRankCloud({ items }: { items: FoodStory[] }) {
     >
       <div className="story-taste__head">
         <h2 className="story-taste__title">최근 입맛</h2>
-        <p className="story-taste__sub">지난 일주일 · {ranks.length}가지</p>
+        <p className="story-taste__sub">지난 일주일 · {ranks.length ? `${ranks.length}가지` : '첫 기록을 기다리는 중'}</p>
       </div>
       {categories.length ? (
         <ul className="story-taste__categories" aria-label="많이 먹은 카테고리">
@@ -65,7 +65,7 @@ export function StoryRankCloud({ items }: { items: FoodStory[] }) {
         </ul>
       ) : null}
       <div className="story-taste__cloud">
-        <IconCloud images={images} showControl={false} />
+        <IconCloud images={cloudImages} showControl={false} />
       </div>
     </section>
   );
